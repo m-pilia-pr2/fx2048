@@ -1,6 +1,6 @@
 /* 
  * This file is part of 2048FXAuto
- * Copyright (C) 2014 Martino Pilia <m.pilia@gmail.com>
+ * Copyright (C) 2014 Martino Pilia <git.m.pilia@gmail.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -27,7 +27,14 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- *
+ * This class implements the interface GiocatoreAutomatico, providing objects
+ * able to play 2048. This player is able to play with 3 differents styles. The
+ * default style uses a search algorithm to evaluate the position. The search 
+ * depth and the playing style are chosen passing opportune values though the 
+ * grid. The style should saved in Location(-1, -1) (1 = random, 2 = blind,
+ * 3 = minimax) and the search depth in Location(-1, -2) (int value for depth).
+ * If the GUI does not provide theese values or provides invalid values,
+ * default settings are used (minimax with depth = 6).
  * @author martino
  */
 public class MyGiocatoreAutomatico implements GiocatoreAutomatico {
@@ -47,23 +54,34 @@ public class MyGiocatoreAutomatico implements GiocatoreAutomatico {
     
     private MyGriglia griglia;
     
+    /**
+     * This is the constructor for the class. The player is initialized with a
+     * void grid.
+     */
     public MyGiocatoreAutomatico() {
         this.griglia = new MyGriglia();
     }
     
+    /**
+     * This is the constructor for the class. The player is initialized with 
+     * the providen grid.
+     * @param g Grid for the player.
+     */
     public MyGiocatoreAutomatico(Griglia g) {
         this();
         this.griglia.putAll(g);
     }
     
+    /* With Java8 static method, this implementation is not needed. */
     /*public static GiocatoreAutomatico getGiocatoreAutomatico(Griglia g) {
         return new MyGiocatoreAutomatico(g);
     }*/
     
     /**
-     * 
-     * @param g
-     * @return 
+     * This method caluclates the next move to be made in the grid provided as
+     * argument.
+     * @param g Current game grid.
+     * @return 0=ALTO; 1=DX; 2=BASSO; 3=SX
      */
     @Override
     public int prossimaMossa(Griglia g){
@@ -71,7 +89,7 @@ public class MyGiocatoreAutomatico implements GiocatoreAutomatico {
         this.griglia = new MyGriglia();
         this.griglia.putAll(g);
         
-        log.info("Grid size: " + griglia.size());
+        log.log(Level.INFO, "Grid size: {0}", griglia.size());
         
         int style = 0;
         
@@ -85,15 +103,16 @@ public class MyGiocatoreAutomatico implements GiocatoreAutomatico {
             case 1: dir = this.nextMoveRand(); break;
             case 2: dir = this.nextMoveBlind(); break;
             //case 9: dir = this.nextMoveBlind2(); break;
-            case 3: 
-                if (this.griglia.get(DEPTH_LOCATION) != null)
+            default: 
+                if (this.griglia.get(DEPTH_LOCATION) != null
+                        && this.griglia.get(DEPTH_LOCATION) > 0)
                     searchDepth = this.griglia.get(DEPTH_LOCATION);
                 else
                     searchDepth = defaultDepth;
                 log.log(Level.INFO, "Depth: {0}", searchDepth);
                 dir = this.nextMoveMinimax(griglia, searchDepth);
                 break;
-            default: throw new IllegalStateException("Wrong value!");
+            //default: throw new IllegalStateException("Wrong value!");
         }
         //System.out.println("" + dir + griglia.isValida(dir));
         griglia.move(dir);
@@ -102,7 +121,7 @@ public class MyGiocatoreAutomatico implements GiocatoreAutomatico {
     }
     
     /**
-     * 
+     * This method provides a random move.
      * @return 0=ALTO; 1=DX; 2=BASSO; 3=SX
      */
     private int nextMoveRand() {
@@ -110,7 +129,7 @@ public class MyGiocatoreAutomatico implements GiocatoreAutomatico {
     }
     
     /**
-     * 
+     * This method provides a move though a blind strategy.
      * @return 0=ALTO; 1=DX; 2=BASSO; 3=SX
      */
     private int nextMoveBlind() {
@@ -180,7 +199,8 @@ public class MyGiocatoreAutomatico implements GiocatoreAutomatico {
     }
     
     /**
-     * Like the previous, but trying every time a down or right move if possible
+     * Another blind strategy, but trying every time a down or right move 
+     * if possible
      * @return 0=ALTO; 1=DX; 2=BASSO; 3=SX
      */
     private int nextMoveBlind2() {
@@ -218,25 +238,26 @@ public class MyGiocatoreAutomatico implements GiocatoreAutomatico {
     }
     
     /**
-     * 
-     * @param board
-     * @param recursion_depth
+     * This method provides a move though a simple implementation of a search
+     * algorithm, similar to a minimax.
+     * @param grid The current grid.
+     * @param depth Depth for the search.
      * @return 0=ALTO; 1=DX; 2=BASSO; 3=SX
      */
-    private int nextMoveMinimax(MyGriglia board, int recursion_depth) {
+    private int nextMoveMinimax(MyGriglia grid, int depth) {
         double[] res; // move, score
-        res = this.nextMoveRecur(board, recursion_depth, recursion_depth, 0.9);
+        res = this.recursiveSearch(grid, depth, depth, 0.9);
         return (int) res[0];
     }
 
     /* // first AI without estimation on new random tiles
-    private double[] nextMoveRecur(MyGriglia board, int depth, int maxDepth, double base) {
+    private double[] nextMoveRecur(MyGriglia grid, int depth, int maxDepth, double base) {
         double bestScore = -1;
         double bestMove = 0;
         for (int m = 0; m < 4; m++) {
             double score = 0;
-            if (board.isValida(m)) {
-                MyGriglia newBoard = new MyGriglia(board);
+            if (grid.isValida(m)) {
+                MyGriglia newBoard = new MyGriglia(grid);
                 newBoard.move(m);
 
                 score = this.evaluate(newBoard);
@@ -256,14 +277,26 @@ public class MyGiocatoreAutomatico implements GiocatoreAutomatico {
         return out;
     }*/
     
-    private double[] nextMoveRecur(MyGriglia board, int depth, int maxDepth, double base) {
+    /**
+     * This is a recursive method used in the research for the best move. It 
+     * tries all legal moves, and for each evaluates all the possible tile
+     * addings in the next ply. It chooses the best move against the worst
+     * possible adding.
+     * @param grid The current grid.
+     * @param depth Depth for the search.
+     * @param maxDepth Maximum depth search.
+     * @param base Base for the exponential ammortization of the position score.
+     * @return An array containing the best move in position <code>0</code>
+     * and it's relative score in position <code>1</code>.
+     */
+    private double[] recursiveSearch(MyGriglia grid, int depth, int maxDepth, double base) {
         double bestScore = -1;
         double bestMove = 0;
         
         for (int m = 0; m < 4; m++) {
             double score = 0;
-            if (board.isValida(m)) {
-                MyGriglia newBoard = new MyGriglia(board);
+            if (grid.isValida(m)) {
+                MyGriglia newBoard = new MyGriglia(grid);
                 newBoard.move(m);
 
                 if (depth != 0) {
@@ -313,7 +346,7 @@ public class MyGiocatoreAutomatico implements GiocatoreAutomatico {
                     newBoard.add(worstAdd, worstValue);
                     //System.out.println("Adding in " + worstAdd.toString());
 
-                    res = this.nextMoveRecur(newBoard, depth - 1, maxDepth, 0.9);
+                    res = this.recursiveSearch(newBoard, depth - 1, maxDepth, 0.9);
                     score += res[1] * Math.pow(base, maxDepth - depth + 1);
                 }
 
@@ -327,7 +360,18 @@ public class MyGiocatoreAutomatico implements GiocatoreAutomatico {
         return out;
     }
 
-    /*
+    /**
+     * This method implements the evaluation funtion. It's the core of the
+     * IA, and it's used to evaluate each position found by the search 
+     * algorithm. This particular implementation is based on a positional 
+     * evaluation, where the score of a position is provided by the sum 
+     * of the value of each tile, multiplied by a coefficient. Each position
+     * in the grid has a different coefficient, and the value of the 
+     * coefficients decreases exponentially along a path, designed in order to 
+     * mantain the grid as clean as possible.
+     * @param newBoard Grid to evaluate.
+     * @return Value for the position.
+     */
     private double evaluate(MyGriglia newBoard) {
         double evaluation = 0;
         int exp = 0; // exponent
@@ -350,10 +394,15 @@ public class MyGiocatoreAutomatico implements GiocatoreAutomatico {
             }
         }
         return evaluation;
-    }*/
+    }
     
-    
-    private double evaluate(MyGriglia newBoard) {
+    /**
+     * Variant of the evaluation function, trying a correction in particular
+     * circumstances. Seems not good.
+     * @param newBoard
+     * @return 
+     */
+    /*private double evaluate(MyGriglia newBoard) {
         double evaluation = 0;
         int exp = 0; // exponent
         for (int i = 0; i < gridSize; i++) {
@@ -402,8 +451,14 @@ public class MyGiocatoreAutomatico implements GiocatoreAutomatico {
             }
         }
         return evaluation;
-    }
+    }*/
     
+    /**
+     * Attempt to implement an evaluation function based on more than one 
+     * possible path.
+     * @param newBoard Current grid.
+     * @return Value ofthe position.
+     */
     private double multiPathEvaluate(MyGriglia newBoard) {
         double evaluation = 0;
         double maxEvaluation = -1;

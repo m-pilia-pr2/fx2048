@@ -61,6 +61,7 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 
 /**
+ * This is the main class for the JavaFX Application.
  * @author bruno.borges@oracle.com
  */
 public class Game2048 extends Application {
@@ -74,6 +75,9 @@ public class Game2048 extends Application {
     private Thread aiThread;
     private Stage primaryStage = null;
 
+    /**
+     * @inheritDoc
+     */
     @Override
     public void start(Stage primaryStage) {
 	List<String> args = this.getParameters().getRaw();
@@ -133,10 +137,20 @@ public class Game2048 extends Application {
         primaryStage.show();
     }
 
+    /**
+     * This method detects if the application is running on device with ARM 
+     * architecture.
+     * @return <code>true</code> if the device has ARM architecture, 
+     * <code>false</code> otherwise.
+     */
     private boolean isARMDevice() {
         return System.getProperty("os.arch").toUpperCase().contains("ARM");
     }
 
+    /**
+     * This method adds an event handler monitoring the keyboard input.
+     * @param scene Scene for the main window.
+     */
     private void addKeyHandler(Scene scene) {
         scene.setOnKeyPressed(ke -> {
             KeyCode keyCode = ke.getCode();
@@ -172,13 +186,21 @@ public class Game2048 extends Application {
         });
     }
 
+    /**
+     * This method adds an event handler for the swipe actions (on ARM devices).
+     * @param scene Scene for the main window.
+     */
     private void addSwipeHandlers(Scene scene) {
         scene.setOnSwipeUp(e -> gameManager.move(Direction.UP));
         scene.setOnSwipeRight(e -> gameManager.move(Direction.RIGHT));
         scene.setOnSwipeLeft(e -> gameManager.move(Direction.LEFT));
         scene.setOnSwipeDown(e -> gameManager.move(Direction.DOWN));
     }
-        
+    
+    /**
+     * This method handles the exit from the game, asking for confirmation 
+     * through a popup window.
+     */
     public void exitGame() {
             log.info("Attempting to exit");
             final int POPUP_WIDTH = 200;
@@ -235,7 +257,8 @@ public class Game2048 extends Application {
     }
     
     /**
-     * @param args the command line arguments
+     * Main method.
+     * @param args The command line arguments.
      */
     public static void main(String[] args) {
         launch(args);

@@ -39,7 +39,6 @@ package game2048;
 
 import giocatoreAutomatico.GiocatoreAutomatico;
 import giocatoreAutomatico.Griglia;
-import giocatoreAutomatico.MyGriglia;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -97,7 +96,8 @@ import javafx.stage.Stage;
 import javafx.util.Duration;
 
 /**
- *
+ * This class rapresent an objet used by the Game2048 application, 
+ * drawing the scene and providing core functionality for the game.
  * @author bruno
  */
 public class GameManager extends Group {
@@ -161,17 +161,26 @@ public class GameManager extends Group {
     private Lock lock = new ReentrantLock();
     private boolean stopAtWinningScore = true;
     private boolean safemode = true;
-    private Griglia griglia = new MyGriglia();
+    private Griglia griglia = new QuickGrid();
     private int currentStyle = 3;
     private final int DEFAULT_DEPTH = 6;
     private final int MAX_DEPTH = 7;
     private final Location PLAYING_STYLE_LOCATION = new Location(-1, -1);
     private final Location DEPTH_LOCATION = new Location(-1, -2);
 
+    /**
+     * This is the constructor for the class.
+     * @param game A reference to the invoker Game2048 object.
+     */
     public GameManager(Game2048 game) {
         this(DEFAULT_GRID_SIZE, game);
     }
 
+    /**
+     * This is the constructor for the class.
+     * @param gridSize Size for the game grid.
+     * @param game A reference to the invoker Game2048 object.
+     */
     public GameManager(int gridSize, Game2048 game) {
         this.game2048 = game;
         //this.gameGrid = new HashMap<>();
@@ -193,6 +202,11 @@ public class GameManager extends Group {
         this.setManaged(false);
     }
 
+    /**
+     * This method moves the tiles in the desired direction, following 
+     * game rules.
+     * @param direction Desired direction for the move.
+     */
     public void move(Direction direction) {
         if (layerOnProperty.get()) {
             return;
@@ -298,6 +312,9 @@ public class GameManager extends Group {
         parallelTransition.getChildren().clear();
     }
 
+    /**
+     * This method asks the GiocatoreAutomatico for an automatic move.
+     */
     public void autoMove() {
 
         if (layerOnProperty.get()) {
@@ -332,8 +349,15 @@ public class GameManager extends Group {
         move(move);
     }
 
+    /**
+     * This method return a Griglia object representing the current position on
+     * the game grid. Attention: this method adjourns and returns always the
+     * same object, wich is shared with other methods. This is the behaviour 
+     * because other methods need to modify the grid under some circumstances.
+     * @return An object rapresenting the current game grid.
+     */
     public Griglia creaGriglia() {
-        //Griglia griglia = new MyGriglia();
+        //Griglia griglia = new QuickGrid();
         for (int i = 0; i < gridSize; i++) {
             for (int j = 0; j < gridSize; j++) {
                 Location l = new Location(i, j);
@@ -349,6 +373,14 @@ public class GameManager extends Group {
         return griglia;
     }
 
+    /**
+     * Search for the farthest location from the selected location along the 
+     * desired direction.
+     * @param location Desired location to start from.
+     * @param direction Desired direction.
+     * @return The farthest location from the desired location along the 
+     * selected direction.
+     */
     private Location findFarthestLocation(
             Location location, 
             Direction direction) {
@@ -363,6 +395,11 @@ public class GameManager extends Group {
         return farthest;
     }
 
+    /**
+     * This method transverses the grid.
+     * @param func
+     * @return 
+     */
     private int traverseGrid(IntBinaryOperator func) {
         AtomicInteger at = new AtomicInteger();
         traversalX.forEach(t_x -> {
@@ -374,6 +411,12 @@ public class GameManager extends Group {
         return at.get();
     }
 
+    /**
+     * This method verifies if merging tiles movements are avaible in the current 
+     * position.
+     * @return <code>true</code> if merge movements are avaible,
+     * <code>false</code> otherwise.
+     */
     private boolean mergeMovementsAvailable() {
         final SimpleBooleanProperty foundMergeableTile
                 = new SimpleBooleanProperty(false);
@@ -405,6 +448,10 @@ public class GameManager extends Group {
         return foundMergeableTile.getValue();
     }
 
+    /**
+     * This method creates and adds to the root group the control buttons 
+     * (checkboxes and choichebox) showed in the main window.
+     */
     private void createControls() {
         ArrayList<Double> speedValues = new ArrayList<>();
         speedValues.add(0.1);
@@ -452,6 +499,10 @@ public class GameManager extends Group {
         hTop.getChildren().add(controls);
     }
 
+    /**
+     * This method creates and adds to the root group the menubar.
+     * @return 
+     */
     public MenuBar createMenuBar() {
         MenuBar menuBar = new MenuBar();
 
@@ -659,6 +710,11 @@ public class GameManager extends Group {
         return menuBar;
     }
 
+    /**
+     * This method commutes (enabling or disabling) the IA. If the IA is enabled
+     * the human player cannot move the board, but he can invoke a move from the 
+     * automatic player, or he can enable the computer to move in automatic.
+     */
     public void toggleAI() {
         if (!ai) {
             log.info("Creating bot.");
@@ -690,6 +746,11 @@ public class GameManager extends Group {
 
     }
 
+    /**
+     * This method commutes the automatic moving by the computer. When the 
+     * automatic moving is enabled, the game asks automatically the 
+     * GiocatoreAutomatico to move.
+     */
     public void toggleAutoAI() {
         if (autoAI) {
             autoAI = false;
@@ -707,14 +768,30 @@ public class GameManager extends Group {
         }
     }
 
+    /**
+     * Check if the auomatic move setting is enabled.
+     * @return <code>true</code> if automatic moving is enabled,
+     * <code>false</code> otherwise.
+     */
     public boolean isAutoAI() {
         return autoAI;
     }
 
+    /**
+     * Check if the automatic player setting is enabled.
+     * @return <code>true</code> if automatic player is enabled,
+     * <code>false</code> otherwise.
+     */
     public boolean isAI() {
         return this.ai;
     }
 
+    /**
+     * This method creates a Thread object for the automatic moving. When AutoAI
+     * is enabled, the thread asks periodically the automatic player for move.
+     * @return A Thread object which asks periodically for the automatic player
+     * to move, when AutoAI is enabled.
+     */
     public Thread aiThread() {
         return new Thread(() -> {
             log.info("Started AI thread.");
@@ -743,6 +820,13 @@ public class GameManager extends Group {
         });
     }
 
+    /**
+     * This method creates a Runnable object for the automatic moving. When 
+     * AutoAI is enabled, the thread runing this task asks periodically 
+     * the automatic player for move.
+     * @return A Task object which asks periodically for the automatic player
+     * to move, when AutoAI is enabled.
+     */
     public Task aiTask() {
         return new Task<Integer>() {
             @Override
@@ -774,6 +858,9 @@ public class GameManager extends Group {
         };
     }
 
+    /**
+     * This method creates and inserts in the main window the score field.
+     */
     private void createScore() {
         Label lblTitle = new Label("2048");
         lblTitle.getStyleClass().add("title");
@@ -820,6 +907,10 @@ public class GameManager extends Group {
         getChildren().add(lblPoints);
     }
 
+    /**
+     * This method creates the graphic for the game grid and insert it in the 
+     * main window.
+     */
     private void createGrid() {
         final double arcSize = CELL_SIZE / 6d;
 
@@ -858,6 +949,9 @@ public class GameManager extends Group {
         vGame.getChildren().add(hBottom);
     }
 
+    /**
+     * This method initializes actions for game over and game win. 
+     */
     private void initGameProperties() {
         gameOverProperty.addListener((observable, oldValue, newValue) -> {
             if (newValue) {
@@ -931,6 +1025,9 @@ public class GameManager extends Group {
         });
     }
 
+    /**
+     * This method clears the game status and settings.
+     */
     private void clearGame() {
         List<Node> collect = gridGroup.getChildren().filtered(
                 c -> c instanceof Tile).stream().collect(Collectors.toList());
@@ -946,6 +1043,9 @@ public class GameManager extends Group {
         initializeLocationsInGameGrid();
     }
 
+    /**
+     * This method resets the game.
+     */
     private void resetGame() {
         clearGame();
         initializeGrid();
@@ -970,6 +1070,11 @@ public class GameManager extends Group {
         });
     }
 
+    /**
+     * This method initializes the timeline for the game animations.
+     * @param v1 Value of acquired points.
+     * @return Timeline object for the animation.
+     */
     private Timeline animateScore(String v1) {
         final Timeline timeline = new Timeline();
         lblPoints.setText("+" + v1);
@@ -989,6 +1094,9 @@ public class GameManager extends Group {
         return timeline;
     }
 
+    /**
+     * This interface is not used.
+     */
     interface AddTile {
 
         void add(int value, int x, int y);
@@ -1005,6 +1113,9 @@ public class GameManager extends Group {
         });
     }
 
+    /**
+     * This method initializes the game grid.
+     */
     private void initializeGrid() {
         initializeLocationsInGameGrid();
 
@@ -1057,6 +1168,11 @@ public class GameManager extends Group {
         return randomLocation;
     }
 
+    /**
+     * This method creates and adds a tile in the desired position and 
+     * draws the correspunding graphical animation.
+     * @param randomLocation Location for the new tile.
+     */
     private void addAndAnimateRandomTile(Location randomLocation) {
         Tile tile = Tile.newRandomTile();
         tile.setLocation(randomLocation);
@@ -1082,8 +1198,15 @@ public class GameManager extends Group {
     //private static final Duration ANIMATION_EXISTING_TILE = Duration.millis(125);
     private static Duration ANIMATION_EXISTING_TILE;
 
+    /**
+     * This method draws the animation for a tile movement.
+     * @param tile Tile to be animated.
+     * @param newLocation New location to move the tile to.
+     * @return Timeline containing the animation.
+     */
     private Timeline animateExistingTile(Tile tile, Location newLocation) {
-        if (this.moveGap >= 500) {
+        // quicker animation if the autoplayer is going fast
+        if (this.autoAI && this.moveGap >= 500) {
             ANIMATION_EXISTING_TILE = Duration.millis(125);
         } else {
             ANIMATION_EXISTING_TILE = Duration.millis(15);
@@ -1115,8 +1238,14 @@ public class GameManager extends Group {
     //private static final Duration ANIMATION_NEWLY_ADDED_TILE = Duration.millis(125);
     private static Duration ANIMATION_NEWLY_ADDED_TILE;
 
+    /**
+     * This method draws the animation for a newly added tile.
+     * @param tile Tile to be animated.
+     * @return Timeline object containing the animation.
+     */
     private Timeline animateNewlyAddedTile(Tile tile) {
-        if (this.moveGap >= 500) {
+        // quicker animation if the autoplayer is going fast
+        if (this.autoAI && this.moveGap >= 500) {
             ANIMATION_NEWLY_ADDED_TILE = Duration.millis(125);
         } else {
             ANIMATION_NEWLY_ADDED_TILE = Duration.millis(15);
@@ -1137,8 +1266,14 @@ public class GameManager extends Group {
 
     private static Duration ANIMATION_TILE_TO_BE_MERGED;
 
+    /**
+     * This method hides the tiles ready to be merged.
+     * @param tile Tile to be hidden.
+     * @return Timeline object containing the animation.
+     */
     private Timeline hideTileToBeMerged(Tile tile) {
-        if (this.moveGap >= 500) {
+        // quicker animation if the autoplayer is going fast
+        if (this.autoAI && this.moveGap >= 500) {
             ANIMATION_TILE_TO_BE_MERGED = Duration.millis(150);
         } else {
             ANIMATION_TILE_TO_BE_MERGED = Duration.millis(15);
@@ -1150,11 +1285,20 @@ public class GameManager extends Group {
         return timeline;
     }
 
+    /**
+     * This method saves the current game status. It is restorable through the 
+     * {@link game2048.GameManager#restoreSession() restoreSession} method.
+     */
     public void saveSession() {
         SessionManager sessionManager = new SessionManager(DEFAULT_GRID_SIZE);
         sessionManager.saveSession(gameGrid, gameScoreProperty.getValue());
     }
 
+    /**
+     * This method restores the last saved game status. The status can be saved 
+     * through the {@link game2048.GameManager#saveSession() saveSession} 
+     * method.
+     */
     public void restoreSession() {
         SessionManager sessionManager = new SessionManager(DEFAULT_GRID_SIZE);
 
