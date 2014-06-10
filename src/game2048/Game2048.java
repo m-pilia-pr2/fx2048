@@ -19,7 +19,7 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import javafx.stage.Modality;
-import javafx.stage.Stage; 
+import javafx.stage.Stage;
 
 /**
  * @author bruno.borges@oracle.com
@@ -111,6 +111,9 @@ public class Game2048 extends Application {
                 if (gameManager.isAI())
                     gameManager.toggleAutoAI();
             }
+            if (keyCode.equals(KeyCode.ESCAPE)) {
+                exitGame();
+            }
             if (gameManager.isAI() && keyCode.equals(KeyCode.N)) {
                 log.info("Doing an auto move on manual request.");
                 gameManager.autoMove();
@@ -130,6 +133,61 @@ public class Game2048 extends Application {
         scene.setOnSwipeRight(e -> gameManager.move(Direction.RIGHT));
         scene.setOnSwipeLeft(e -> gameManager.move(Direction.LEFT));
         scene.setOnSwipeDown(e -> gameManager.move(Direction.DOWN));
+    }
+        
+    public void exitGame() {
+            log.info("Attempting to exit");
+            final int POPUP_WIDTH = 200;
+            final int POPUP_HEIGHT = 80;
+            boolean aiWasAuto = gameManager.isAutoAI();
+            Group popupRoot = new Group();
+            Stage popup = new Stage();
+            popup.setTitle("Confirmation");
+            popup.initOwner(primaryStage); // always on top over main window
+            popup.initModality(Modality.WINDOW_MODAL); // intercepts all input
+            popup.setOnCloseRequest((ev) -> { // impedisce la chiusura
+                ev.consume();
+            });
+            Scene popupScene = new Scene(popupRoot, POPUP_WIDTH, POPUP_HEIGHT);
+            popup.setScene(popupScene);
+            Text confirmText = new Text("Do you really want to quit?");
+            Button yes = new Button("Yes");
+            yes.setOnAction((ev) -> {
+                log.info("Exiting.");
+                aiThread.interrupt();
+                popup.close();
+                Platform.exit();
+            });
+            yes.setOnKeyPressed((ke) -> {
+                if (ke.getCode().equals(KeyCode.ENTER))
+                    yes.fire();
+            });
+            Button no = new Button("No");
+            no.setOnAction((ev) -> {
+                log.info("Exiting aborted.");
+                if (aiWasAuto)
+                    gameManager.toggleAutoAI();
+                popup.close();
+            });
+            no.setOnKeyPressed((ke) -> {
+                if (ke.getCode().equals(KeyCode.ENTER))
+                    no.fire();
+            });
+            no.setLayoutX(50);
+            no.setLayoutY(50);
+            HBox buttons = new HBox(10);
+            buttons.setAlignment(Pos.CENTER);
+            buttons.getChildren().addAll(yes, no);
+            VBox content = new VBox(10);
+            content.getChildren().addAll(confirmText, buttons);
+            popupRoot.getChildren().addAll(content);
+            
+            if (aiWasAuto)
+                gameManager.toggleAutoAI();
+            popup.show();
+            
+            content.setLayoutX((POPUP_WIDTH - content.getWidth()) / 2);
+            content.setLayoutY((POPUP_HEIGHT - content.getHeight()) / 2);
     }
     
     /**
