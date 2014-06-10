@@ -1,6 +1,6 @@
 /* 
  * This file is part of 2048FXAuto
- * Copyright (C) 2014 Martino Pilia <m.pilia@gmail.com>
+ * Copyright (C) 2014 Martino Pilia <git.m.pilia@gmail.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -19,30 +19,42 @@
 package giocatoreAutomatico;
 
 import game2048.Location;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 
 /**
- *
- * @author martino
+ * This class represents a game grid. It's intended to be used in a player-side 
+ * re-implementation of the grid, in order to calculate movements for the IA. 
+ * The grid is transformated in an array of Row objects when needed.
+ * @author Martino Pilia
  */
-public class QuickGrid extends HashMap<game2048.Location,Integer> implements Griglia {
+public class QuickGrid extends HashMap<game2048.Location,Integer> 
+    implements Griglia {
 
     private int gridSize;
     
+    /**
+     * This is the constructor for the QuickGrid class. The default size for
+     * the grid is 4.
+     */
     public QuickGrid() {
         this.gridSize = 4;
     }
-    
+     
+    /**
+     * This is the constructor for the QuickGrid class. Builds a grid of the 
+     * desired size.
+     * @param i An <code>int</code> describing the grid size.
+     */
     public QuickGrid(int i) {
         super(i * i);
         this.gridSize = i;
     }
 
     /**
-     * Copy constructor
+     * This is a copy constructor for the QuickGrid class. It makes a shallow
+     * copy of the grid.
      * @param griglia Grid to be copied.
      */
     public QuickGrid(QuickGrid griglia) {
@@ -50,6 +62,9 @@ public class QuickGrid extends HashMap<game2048.Location,Integer> implements Gri
         this.putAll(griglia);
     }
     
+    /**
+     * @inheritDoc
+     */
     @Override
     public String toString() {
         String out = "";
@@ -64,9 +79,10 @@ public class QuickGrid extends HashMap<game2048.Location,Integer> implements Gri
     }
 
     /**
-     * 
+     * This method verifies if a move in the desired direction is valid.
      * @param m 0=ALTO; 1=DX; 2=BASSO; 3=SX
-     * @return true if the input direction provides a valid move
+     * @return <code>true</code> if the move is valid,
+     * <code>false</code> otherwise.
      */
     public boolean isValida(int m) {
         Row[] rows = new Row[gridSize]; // array of rows...
@@ -102,7 +118,8 @@ public class QuickGrid extends HashMap<game2048.Location,Integer> implements Gri
     }
 
     /**
-     * 
+     * This method does a move in the desired direction, following the 
+     * game rules.
      * @param m 0=ALTO; 1=DX; 2=BASSO; 3=SX
      */
     public void move(int m) {
@@ -153,6 +170,12 @@ public class QuickGrid extends HashMap<game2048.Location,Integer> implements Gri
         }
     }
     
+    /**
+     * This method returns a set containing free locations in the game grid.
+     * Useful for the AI, ehich needs to evaluate the worst possible add in 
+     * the next move.
+     * @return A <code>Set<Location></code> containing the free tiles.
+     */
     public Set<Location> freeLocations() {
         Set<Location> locations = new HashSet<>();
         for (Location l : this.keySet()) {
@@ -162,6 +185,11 @@ public class QuickGrid extends HashMap<game2048.Location,Integer> implements Gri
         return locations;
     }
     
+    /**
+     * This method adds a tile with the desired value in the desired location.
+     * @param l Location for the new tile.
+     * @param value Value of the new tile.
+     */
     public void add(Location l, Integer value) {
         if (this.get(l) != null && !this.get(l).equals(-1))
             throw new RuntimeException("The location " + l.toString()

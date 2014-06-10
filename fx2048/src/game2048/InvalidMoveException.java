@@ -1,6 +1,6 @@
 /* 
  * This file is part of 2048FXAuto
- * Copyright (C) 2014 Martino Pilia <m.pilia@gmail.com>
+ * Copyright (C) 2014 Martino Pilia <git.m.pilia@gmail.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -20,14 +20,24 @@
 package game2048;
 
 /**
- *
+ * This class provides a RuntimeException subclass. It's used when an automatic
+ * player provides an invalid move value. 
+ * @see GiocatoreAutomatico
  * @author Martino Pilia
  */
 class InvalidMoveException extends RuntimeException {
 
+    /**
+     * This is the constructor for the InvalidMoveException.
+     */
     public InvalidMoveException() {
     }
     
+    /**
+     * This is the constructor for the InvalidMoveException.
+     * @param msg A String message with detailed infos about the circumstances 
+     * generating the error.
+     */
     public InvalidMoveException(String msg) {
         super(msg);
     }

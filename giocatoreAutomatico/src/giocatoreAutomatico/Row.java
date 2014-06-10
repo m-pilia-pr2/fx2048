@@ -1,6 +1,6 @@
 /* 
  * This file is part of 2048FXAuto
- * Copyright (C) 2014 Martino Pilia <m.pilia@gmail.com>
+ * Copyright (C) 2014 Martino Pilia <git.m.pilia@gmail.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,8 +21,11 @@ package giocatoreAutomatico;
 import java.util.ArrayList;
 
 /**
- *
- * @author martino
+ * This class provides a Row object representing an array of ordered tiles. 
+ * It's intended to be used in a player-side re-implementation of the grid, in
+ * order to calculate movements for the IA. It may represent a row or a column
+ * of the grid.
+ * @author Martino Pilia
  */
 public class Row {
 
@@ -31,9 +34,17 @@ public class Row {
     int gridSize = 4;
 
     /**
-     * row with the tile values in order
-     *
-     * @param row
+     * This is the constructorn for the Row class. It builds an empty row.
+     */
+    public Row() {
+        this.tiles = new ArrayList<>(gridSize);
+        empty = true;
+    }
+
+    /**
+     * This is the constructor for the Row class. It builds a row initialized
+     * with the tiles passed in the argument.
+     * @param row An ArrayList containing the tiles for the row.
      */
     public Row(ArrayList<Integer> row) {
         this.tiles = new ArrayList<>(gridSize);
@@ -48,14 +59,13 @@ public class Row {
     }
 
     /**
-     *
+     * This method checks if a move is valid along the row.
+     * @param dir <code>0</code> for up or left, <code>1</code> for 
+     * down or right.
+     * @return <code>true</code> if the move is valid,
+     * <code>false</code> otherwise.
      */
-    public Row() {
-        this.tiles = new ArrayList<>(gridSize);
-        empty = true;
-    }
-
-    boolean validRowMove(int dir) {
+    public boolean validRowMove(int dir) {
         if (empty) {
             return false;
         }
@@ -78,7 +88,16 @@ public class Row {
         return false;
     }
 
-    private boolean hasFreeSpace(int pos, int dir) {        
+    /**
+     * This method verifies if a tile has a free space to move where in the 
+     * desired direction.
+     * @param pos Index representing the tile to be moved in the row.
+     * @param dir <code>0</code> for up or left, <code>1</code> for 
+     * down or right.
+     * @return <code>true</code> if the move is valid,
+     * <code>false</code> otherwise.
+     */
+    public boolean hasFreeSpace(int pos, int dir) {        
         /*
          * Be careful, in the next block the search goes on opposite direction
          * than the previous case: for dir = 0 you search from gridSize -1 to 0
@@ -96,7 +115,17 @@ public class Row {
         return false;
     }
 
-    private boolean hasSameTile(int pos, int dir, int val) {
+
+    /**
+     * This method verifies if a tile has a same tile to merge with in the 
+     * next tile along the desired direction.
+     * @param pos Index representing the tile to be moved in the row.
+     * @param dir <code>0</code> for up or left, <code>1</code> for 
+     * down or right.
+     * @return <code>true</code> if the merge is possible,
+     * <code>false</code> otherwise.
+     */
+    public boolean hasSameTile(int pos, int dir, int val) {
         if (dir == 0) { // down/right
             for (int i = pos + 1; i < gridSize; i++) {
                 if (tiles.get(i).equals(-1)) {
@@ -123,7 +152,12 @@ public class Row {
         return false;
     }
 
-    void compact(int dir) {
+    /**
+     * This method compacts the tiles along the desired direction.
+     * @param dir <code>0</code> for up or left, <code>1</code> for 
+     * down or right.
+     */
+    public void compact(int dir) {
         int lastFree = gridSize;
         if (dir == 0) { // to down/right
             for (int i = 0; i < gridSize; i++) {
@@ -168,7 +202,13 @@ public class Row {
         }
     }
 
-    void join(int dir) {
+    /**
+     * This method merge all the avaible tiles along the desired direction,
+     * if possible.
+     * @param dir <code>0</code> for up or left, <code>1</code> for 
+     * down or right.
+     */
+    public void join(int dir) {
         if (dir == 0) { // right/down
             for (int i = 0; i < gridSize - 1; i++) {
                 if (!tiles.get(i).equals(-1)
@@ -193,7 +233,12 @@ public class Row {
     }
 
     /**
-     * @param dir Direction to move: 0 for left (or up), 1 for right (or down).
+     * This method moves a row in the desired direction, following the 2048 game
+     * rulws. The movement is obtained as a combination of a compact, a merge
+     * (done only if possible) and another compact to fill void cells eventually
+     * left by the merge.
+     * @param dir <code>0</code> for up or left, <code>1</code> for 
+     * down or right.
      */
     void moveRow(int dir) {
         if (this.validRowMove(dir)) {
@@ -203,14 +248,17 @@ public class Row {
         }
     }
 
+    /**
+     * @inheritDoc
+     */
     @Override
     public String toString() {
         return this.tiles.toString();
     }
 
     /**
-     *
-     * @param i
+     * This method adds a tile with the desired value at the end of the row.
+     * @param i Value of the tile to be added.
      */
     public void add(Integer i) {
         this.tiles.add(i);
@@ -220,9 +268,10 @@ public class Row {
     }
 
     /**
-     *
-     * @param i
-     * @return
+     * This method gets the value of the i<sup>th</sup> tile in the row.
+     * @param i Index of the desired tile.
+     * @return The Integer value of the desired tile, or <code>null</code> if
+     * the desired tile does not exists.
      */
     public Integer get(int i) {
         return this.tiles.get(i);

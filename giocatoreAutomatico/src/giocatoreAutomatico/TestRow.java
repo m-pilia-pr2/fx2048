@@ -1,6 +1,6 @@
 /* 
  * This file is part of 2048FXAuto
- * Copyright (C) 2014 Martino Pilia <m.pilia@gmail.com>
+ * Copyright (C) 2014 Martino Pilia <git.m.pilia@gmail.com>
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@ package giocatoreAutomatico;
 import java.util.ArrayList;
 
 /**
- *
+ * This is a test class for the Row class.
  * @author martino
  */
 public class TestRow {
