@@ -3,7 +3,9 @@ package game2048;
 import javafx.scene.input.KeyCode;
 
 /**
+ * This is an enum providing directions.
  * @author bruno.borges@oracle.com
+ * @version 0.1a
  */
 public enum Direction {
 
@@ -12,11 +14,22 @@ public enum Direction {
     private final int y;
     private final int x;
 
+    /*
+     * This is the enum constructor, each direction is represented 
+     * as a couple of components along x and y axises.
+     * @param x number of moves along x axis
+     * @param y number of moves along y axis
+     * @author bruno
+     * @version 0.1a
+     */
     Direction(int x, int y) {
         this.x = x;
         this.y = y;
     }
 
+    /**
+     * 
+     */
     public int getX() {
         return x;
     }
