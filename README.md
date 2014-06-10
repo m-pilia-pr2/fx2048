@@ -102,7 +102,7 @@ Playing Styles
 ==============
 The automatic player has three different playing styles:<br />
 *random move<br />
-*blind (folowing a blind strategy)<br />
+*blind (following a blind strategy)<br />
 *minimax
 
 Superseeding on the first two, the third is a simple implementation of a search 
