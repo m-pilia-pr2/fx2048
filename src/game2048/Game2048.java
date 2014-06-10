@@ -13,7 +13,9 @@ import javafx.scene.Cursor;
 import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.MenuBar;
 import javafx.scene.input.KeyCode;
+import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
@@ -54,7 +56,8 @@ public class Game2048 extends Application {
         //aiThread = new Thread(gameManager.aiTask()); // using JavaFX Task
         aiThread.start();
 
-        StackPane root = new StackPane(gameManager);
+        //StackPane root = new StackPane(gameManager);
+        BorderPane root = new BorderPane(gameManager);
         root.setPrefSize(gameBounds.getWidth(), gameBounds.getHeight());
         ChangeListener<Number> resize = (ov, v, v1) -> {
             gameManager.setLayoutX((root.getWidth() - gameBounds.getWidth()) / 2d);
@@ -62,7 +65,10 @@ public class Game2048 extends Application {
         };
         root.widthProperty().addListener(resize);
         root.heightProperty().addListener(resize);
-
+                
+        MenuBar menuBar = gameManager.createMenuBar();
+        root.setTop(menuBar);
+        
         Scene scene = new Scene(root, MAIN_WINDOW_WIDTH, MAIN_WINDOW_HEIGHT);
         scene.getStylesheets().add("game2048/game.css");
         addKeyHandler(scene);
