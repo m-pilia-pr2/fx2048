@@ -18,7 +18,7 @@ import java.util.logging.Logger;
  */
 public class MyGiocatoreAutomatico implements GiocatoreAutomatico {
     
-    private final int SEARCH_DEPTH = 6;
+    private int searchDepth;
     private int gridSize = 4; // provisional hard-coded grid size
     private double evalBase = 0.25; // provisional
     private int mode = 3; // provisional hard-coded selector
@@ -32,6 +32,7 @@ public class MyGiocatoreAutomatico implements GiocatoreAutomatico {
     public MyGiocatoreAutomatico(Griglia g) {
         this.griglia = new MyGriglia();
         this.griglia.putAll(g);
+        //this.griglia = (MyGriglia) g; NO
     }
     
     public static GiocatoreAutomatico getGiocatoreAutomatico(Griglia g) {
@@ -46,14 +47,26 @@ public class MyGiocatoreAutomatico implements GiocatoreAutomatico {
      */
     @Override
     public synchronized int prossimaMossa(game2048.Location xy, int v){
-        griglia.put(xy, v);
-        int dir; // provisional hard-coded selector
-        switch (mode) {
-            case 0: dir = this.nextMoveRand(); break;
-            case 1: dir = this.nextMoveBlind(); break;
-            case 2: dir = this.nextMoveBlind2(); break;
-            case 3: dir = this.nextMoveMinimax(griglia, SEARCH_DEPTH); break;
-            default: throw new IllegalStateException("Something is broken!");
+        griglia.put(xy, v); // add last random tile
+        
+        int style = 0;
+        
+        if (griglia.get(new Location(-1, -1)) != null)
+            style = griglia.get(new Location(-1, -1));
+        else
+            style = 3; // default style is minimax
+        
+        int dir; // value for the move selected by AI
+        switch (style) {
+            case 1: dir = this.nextMoveRand(); break;
+            case 2: dir = this.nextMoveBlind(); break;
+            //case 9: dir = this.nextMoveBlind2(); break;
+            case 3: 
+                searchDepth = this.griglia.get(new Location(-1, -2));
+                log.log(Level.INFO, "Depth: {0}", searchDepth);
+                dir = this.nextMoveMinimax(griglia, searchDepth);
+                break;
+            default: throw new IllegalStateException("Wrong value!");
         }
         //System.out.println("" + dir + griglia.isValida(dir));
         griglia.move(dir);
@@ -223,8 +236,8 @@ public class MyGiocatoreAutomatico implements GiocatoreAutomatico {
                             worstValue = 2;
                         }
                     }
-                    // 4 random tile prevision
-                    for (Location l : newBoard.freeLocations()) {
+                    // 4 random tile prevision (gets the game worse...)
+                    /*for (Location l : newBoard.freeLocations()) {
                         //System.out.print(l);
                         MyGriglia newBoardAdded = new MyGriglia(newBoard);
                         
@@ -238,7 +251,7 @@ public class MyGiocatoreAutomatico implements GiocatoreAutomatico {
                             worstAdd = l;
                             worstValue = 4;
                         }
-                    }
+                    }*/
                     
                     score = this.evaluate(newBoard);
                     

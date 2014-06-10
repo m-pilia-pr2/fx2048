@@ -41,15 +41,19 @@ import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
+import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.RadioMenuItem;
+import javafx.scene.control.ToggleGroup;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Text;
 import javafx.stage.PopupWindow;
@@ -64,7 +68,9 @@ public class GameManager extends Group {
 
     private Logger log = Logger.getGlobal();
 
-    private static final int FINAL_VALUE_TO_WIN = 2048;
+    //private static final int FINAL_VALUE_TO_WIN = 2048;
+    private static int finalValueToWin = 0;
+    private static final int[] valuesToWin = {2048, 4096, 8192};
     public static final int CELL_SIZE = 128;
     private static final int DEFAULT_GRID_SIZE = 4;
     private static final int BORDER_WIDTH = (14 + 2) / 2;
@@ -106,7 +112,15 @@ public class GameManager extends Group {
     private GiocatoreAutomatico giocatoreAutomatico = null;
     private VBox controls = null;
     private HBox speedControls = null;
+    private Text speedControlsLabel = null;
     private Tile newRandomTile = null;
+    private Lock lock = new ReentrantLock();
+    private boolean stopAtWinningScore = true;
+    private boolean safemode = true;
+    private Griglia griglia = new MyGriglia();
+    private int currentStyle = 3;
+    private final int DEFAULT_DEPTH = 6;
+    private final int MAX_DEPTH = 7;
 
     public GameManager(Game2048 game) {
         this(DEFAULT_GRID_SIZE, game);
@@ -119,7 +133,7 @@ public class GameManager extends Group {
         this.traversalX = IntStream.range(0, gridSize).boxed().collect(Collectors.toList());
         this.traversalY = IntStream.range(0, gridSize).boxed().collect(Collectors.toList());
 
-        createMenuBar();
+        createControls();
         createScore();
         createGrid();
         initGameProperties();
@@ -168,7 +182,7 @@ public class GameManager extends Group {
                 gameMovePoints.set(gameMovePoints.get() + tileToBeMerged.getValue());
                 gameScoreProperty.set(gameScoreProperty.get() + tileToBeMerged.getValue());
 
-                if (tileToBeMerged.getValue() == FINAL_VALUE_TO_WIN) {
+                if ((tileToBeMerged.getValue() == finalValueToWin) && stopAtWinningScore) {
                     gameWonProperty.set(true);
                 }
                 return 1;
@@ -256,7 +270,7 @@ public class GameManager extends Group {
     }
 
     public Griglia creaGriglia() {
-        Griglia griglia = new MyGriglia();
+        //Griglia griglia = new MyGriglia();
         for (int i = 0; i < gridSize; i++) {
             for (int j = 0; j < gridSize; j++) {
                 Location l = new Location(i, j);
@@ -321,10 +335,56 @@ public class GameManager extends Group {
 
         return foundMergeableTile.getValue();
     }
+    
+    private void createControls() {
+        ArrayList<Double> speedValues = new ArrayList<>();
+        speedValues.add(0.1);
+        speedValues.add(0.2);
+        speedValues.add(0.5);
+        speedValues.add(1.0);
+        speedValues.add(2.0);
+        speedValues.add(5.0);
+        ChoiceBox<Double> gapCB = new ChoiceBox<>();
+        gapCB.getItems().addAll(speedValues);
+        gapCB.setValue(1.0);
+        // interfaccia ChangeListener<Number>
+        // metodo changed(ObservableValue ov, Number value, Number newValue)
+        gapCB.getSelectionModel().selectedIndexProperty()
+                .addListener((ov, v, nv) -> {
+                    moveGap = (int) (1000 * gapCB.getItems().get((Integer) nv));
+                    log.log(Level.INFO, "Move gap changed to {0}", moveGap);
+                });
+        
+        speedControls = new HBox(5);
+        speedControlsLabel = new Text("Time between moves (s):");
+        speedControlsLabel.setFill(Color.GRAY);
+        speedControls.setAlignment(Pos.CENTER);
+        speedControls.setDisable(true);
+        speedControls.getChildren().addAll(speedControlsLabel, gapCB);
+        autoAiCheckBox.setAllowIndeterminate(false);
+        autoAiCheckBox.setOnAction((e) -> {
+            toggleAutoAI();
+        });
+        autoAiCheckBox.setDisable(true);
 
-    private void createMenuBar() {
-        MenuBar menuBar = new MenuBar();
+        aiCheckBox.setAllowIndeterminate(false);
+        aiCheckBox.setOnAction((e) -> {
+            toggleAI();
+        });
+        
         controls = new VBox(5);
+        
+        controls.setMaxWidth(240);
+        controls.setMinWidth(240);
+        controls.setMaxHeight(60);
+        controls.setMinHeight(60);
+
+        controls.getChildren().addAll(aiCheckBox, autoAiCheckBox, speedControls);
+        hTop.getChildren().add(controls);
+    }
+
+    public MenuBar createMenuBar() {
+        MenuBar menuBar = new MenuBar();
 
         Menu gameMenu = new Menu("Game Menu");
         MenuItem save = new MenuItem("Save (S)");
@@ -346,54 +406,140 @@ public class GameManager extends Group {
         credits.setOnAction((e) -> {
 
         });
+        MenuItem help = new MenuItem("Help");
+        help.setOnAction((e) -> {
+
+        });
         MenuItem exit = new MenuItem("Exit (Esc)");
         exit.setOnAction((e) -> {
             game2048.exitGame();
         });
-        gameMenu.getItems().addAll(save, restore, restart, credits, exit);
+        // settings menu
+        Menu settings = new Menu("Settings");
+        CheckMenuItem stopAtWin = new CheckMenuItem("Stop at win");
+        stopAtWin.setOnAction((ae) -> {
+            if (stopAtWinningScore)
+                stopAtWinningScore = false;
+            else
+                stopAtWinningScore = true;
+        });
+        Menu playingStyle = new Menu("Playing style");
+        playingStyle.setDisable(true);
+        ToggleGroup playingStyleGroup = new ToggleGroup();
+        RadioMenuItem randomStyle = new RadioMenuItem("Random");
+        randomStyle.setToggleGroup(playingStyleGroup);
+        randomStyle.setOnAction((e) -> {
+            currentStyle = 1;
+            griglia.put(new Location (-1, -1), currentStyle);
+            giocatoreAutomatico = MyGiocatoreAutomatico
+                    .getGiocatoreAutomatico(creaGriglia());
+        });
+        RadioMenuItem blindStyle = new RadioMenuItem("Blind");
+        blindStyle.setToggleGroup(playingStyleGroup);
+        blindStyle.setOnAction((e) -> {
+            currentStyle = 2;
+            griglia.put(new Location (-1, -1), currentStyle);
+            giocatoreAutomatico = MyGiocatoreAutomatico
+                    .getGiocatoreAutomatico(creaGriglia());
+        });
+        RadioMenuItem minimaxStyle = new RadioMenuItem("Minimax");
+        minimaxStyle.setToggleGroup(playingStyleGroup);
+        minimaxStyle.setOnAction((e) -> {
+            currentStyle = 3;
+            griglia.put(new Location (-1, -1), currentStyle);
+            giocatoreAutomatico = MyGiocatoreAutomatico
+                    .getGiocatoreAutomatico(creaGriglia());
+        });
+        minimaxStyle.setSelected(true);
+        
+        playingStyle.getItems().addAll(
+                randomStyle, 
+                blindStyle, 
+                minimaxStyle);
+        
+        Menu depthMenu = new Menu("Depth");
+        depthMenu.setDisable(true);
+        ToggleGroup depthGroup = new ToggleGroup();
+        Set<Integer> values = new HashSet<>();
+        for (int i = 1; i <= MAX_DEPTH; i++) {
+            values.add(i);
+        }
+        for (Integer i : values) {
+            RadioMenuItem r = new RadioMenuItem((i).toString());
+            r.setToggleGroup(depthGroup);
+            r.setOnAction((e) -> {
+                griglia.put(new Location(-1, -2), i); // location for search depth
+                giocatoreAutomatico = MyGiocatoreAutomatico
+                        .getGiocatoreAutomatico(creaGriglia());
+            });
+            depthMenu.getItems().add(r);
+            if (i == DEFAULT_DEPTH) {
+                r.fire();
+                r.setSelected(true);
+            }
+        }
+                
+        CheckMenuItem safemodeCheckBox = new CheckMenuItem("Safemode");
+        safemodeCheckBox.setOnAction((e) -> {
+            if (safemode) {
+                playingStyle.setDisable(false);
+                depthMenu.setDisable(false);
+                griglia.put(new Location (-1, -1), currentStyle);
+                giocatoreAutomatico = MyGiocatoreAutomatico
+                        .getGiocatoreAutomatico(creaGriglia());
+                safemode = false;
+            }
+            else {
+                playingStyle.setDisable(true);
+                depthMenu.setDisable(true);
+                griglia.remove(new Location(-1,-1));
+                safemode = true;
+            }
+        });
+        safemodeCheckBox.setSelected(true);
+        stopAtWin.setSelected(true); // default value
+        final ToggleGroup valuesToWinGroup = new ToggleGroup();
+        Menu valueToWin = new Menu("Value to win");
+        for (Integer i : valuesToWin) {
+            RadioMenuItem r = new RadioMenuItem(i.toString());
+            r.setToggleGroup(valuesToWinGroup);
+            r.setOnAction((ae) -> {
+                finalValueToWin = i;
+            });
+            valueToWin.getItems().add(r);
+        }
+        for (MenuItem m : valueToWin.getItems()) {
+            if (!(m instanceof RadioMenuItem))
+                continue;
+            RadioMenuItem r = (RadioMenuItem) m;
+            if (r.getText().equals("2048")) {
+                r.fire();
+                r.setSelected(true);
+            }
+            //System.out.println(finalValueToWin);
+        }
+        settings.getItems().addAll(
+                valueToWin, 
+                stopAtWin, 
+                playingStyle,
+                depthMenu,
+                safemodeCheckBox);
+        
+        // add all to main menu
+        gameMenu.getItems().addAll(
+                save, 
+                restore, 
+                restart, 
+                credits,
+                help,
+                exit);
 
-        ArrayList<Double> speedValues = new ArrayList<>();
-        speedValues.add(0.1);
-        speedValues.add(0.2);
-        speedValues.add(0.5);
-        speedValues.add(1.0);
-        speedValues.add(2.0);
-        speedValues.add(5.0);
-        ChoiceBox<Double> gapCB = new ChoiceBox<>();
-        gapCB.getItems().addAll(speedValues);
-        gapCB.setValue(1.0);
-        // interfaccia ChangeListener<Number>
-        // metodo changed(ObservableValue ov, Number value, Number newValue)
-        gapCB.getSelectionModel().selectedIndexProperty()
-                .addListener((ov, v, nv) -> {
-                    moveGap = (int) (1000 * gapCB.getItems().get((Integer) nv));
-                    log.log(Level.INFO, "Move gap changed to {0}", moveGap);
-                });
 
-        menuBar.getMenus().addAll(gameMenu);
+        menuBar.getMenus().addAll(gameMenu, settings);
         menuBar.setLayoutX(0);
         menuBar.setLayoutY(0);
 
-        speedControls = new HBox(5);
-        Text speedControlsLabel = new Text("Time between moves (s):");
-        speedControls.setAlignment(Pos.CENTER);
-        speedControls.getChildren().addAll(speedControlsLabel, gapCB);
-        autoAiCheckBox.setAllowIndeterminate(false);
-        autoAiCheckBox.setOnAction((e) -> {
-            toggleAutoAI();
-        });
-
-        aiCheckBox.setAllowIndeterminate(false);
-        aiCheckBox.setOnAction((e) -> {
-            toggleAI();
-        });
-        controls.setMaxWidth(240);
-        controls.setMinWidth(240);
-        controls.setMaxHeight(60);
-        controls.setMinHeight(60);
-
-        controls.getChildren().addAll(menuBar, aiCheckBox);
-        hTop.getChildren().add(controls);
+        return menuBar;
     }
 
     public void toggleAI() {
@@ -403,7 +549,8 @@ public class GameManager extends Group {
             giocatoreAutomatico = MyGiocatoreAutomatico.getGiocatoreAutomatico(creaGriglia());
             ai = true;
             aiCheckBox.setSelected(true);
-            controls.getChildren().add(autoAiCheckBox);
+            //controls.getChildren().add(autoAiCheckBox);
+            autoAiCheckBox.setDisable(false);
         } else {
             log.info("Destroying bot.");
             giocatoreAutomatico = null;
@@ -412,7 +559,8 @@ public class GameManager extends Group {
             if (autoAI) {
                 autoAiCheckBox.fire();
             }
-            controls.getChildren().remove(autoAiCheckBox);
+            //controls.getChildren().remove(autoAiCheckBox);
+            autoAiCheckBox.setDisable(true);
         }
 
     }
@@ -421,11 +569,16 @@ public class GameManager extends Group {
         if (autoAI) {
             autoAI = false;
             autoAiCheckBox.setSelected(false);
-            controls.getChildren().remove(speedControls);
+            //controls.getChildren().remove(speedControls);
+            speedControls.setDisable(true);
+            speedControlsLabel.setFill(Color.LIGHTGRAY);
+            
         } else {
             autoAI = true;
             autoAiCheckBox.setSelected(true);
-            controls.getChildren().add(speedControls);
+            //controls.getChildren().add(speedControls);
+            speedControls.setDisable(false);
+            speedControlsLabel.setFill(Color.BLACK);
         }
     }
 
