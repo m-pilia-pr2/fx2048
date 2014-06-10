@@ -99,7 +99,8 @@ public class SessionManager {
      * This method restores the last saved game status. The status is saved with the
      * {@link game2048.SessionManager#saveSession(java.util.Map, java.lang.Integer) saveSession}
      * method.
-     * @param gameGrid A <code>Map<Location, Tile></code> representing the
+     * @param gameGrid A <code>Map</code> of <code>Location</code> to 
+     * <code>Tile</code> representing the
      * tiles on the game grid.
      */
     public int restoreSession(Map<Location, Tile> gameGrid) {

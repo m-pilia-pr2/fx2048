@@ -22,7 +22,7 @@ package game2048;
 /**
  * This class provides a RuntimeException subclass. It's used when an automatic
  * player provides an invalid move value. 
- * @see GiocatoreAutomatico
+ * @see giocatoreAutomatico.GiocatoreAutomatico
  * @author Martino Pilia
  */
 class InvalidMoveException extends RuntimeException {

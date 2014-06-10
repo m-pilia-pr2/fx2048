@@ -76,7 +76,7 @@ public class Game2048 extends Application {
     private Stage primaryStage = null;
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     public void start(Stage primaryStage) {

@@ -62,7 +62,7 @@ public class QuickGrid extends HashMap<game2048.Location,Integer>
     }
     
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     public String toString() {

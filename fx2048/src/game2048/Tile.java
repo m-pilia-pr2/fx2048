@@ -127,7 +127,7 @@ public class Tile extends Label {
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     public String toString() {

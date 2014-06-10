@@ -62,7 +62,7 @@ public class MyGriglia extends HashMap<game2048.Location,Integer> implements Gri
     }
     
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     public String toString() {
@@ -173,7 +173,8 @@ public class MyGriglia extends HashMap<game2048.Location,Integer> implements Gri
      * This method returns a set containing free locations in the game grid.
      * Useful for the AI, ehich needs to evaluate the worst possible add in 
      * the next move.
-     * @return A <code>Set<Location></code> containing the free tiles.
+     * @return A <code>Set</code> of <code>Location</code> containing the 
+     * free tiles.
      */
     public Set<Location> freeLocations() {
         Set<Location> locations = new HashSet<>();
