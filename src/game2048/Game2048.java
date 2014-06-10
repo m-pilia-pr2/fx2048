@@ -50,7 +50,8 @@ public class Game2048 extends Application {
 	gameManager = new GameManager(this);
         gameBounds = gameManager.getLayoutBounds();
         
-        aiThread = gameManager.aiThread();
+        aiThread = gameManager.aiThread(); // using normal Thread
+        //aiThread = new Thread(gameManager.aiTask()); // using JavaFX Task
         aiThread.start();
 
         StackPane root = new StackPane(gameManager);
