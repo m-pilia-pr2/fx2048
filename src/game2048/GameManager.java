@@ -1,5 +1,8 @@
 package game2048;
 
+import giocatoreAutomatico.GiocatoreAutomatico;
+import giocatoreAutomatico.Griglia;
+import giocatoreAutomatico.MyGiocatoreAutomatico;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -13,6 +16,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.IntBinaryOperator;
+import java.util.logging.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -20,28 +24,42 @@ import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
 import javafx.animation.ParallelTransition;
 import javafx.animation.Timeline;
+import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleIntegerProperty;
+import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Pos;
 import javafx.scene.Group;
 import javafx.scene.Node;
+import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
+import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.Label;
+import javafx.scene.control.Menu;
+import javafx.scene.control.MenuBar;
+import javafx.scene.control.MenuItem;
+import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.shape.Rectangle;
+import javafx.scene.text.Text;
+import javafx.stage.PopupWindow;
+import javafx.stage.Stage;
 import javafx.util.Duration;
 
 /**
- *
+ * 
  * @author bruno
  */
 public class GameManager extends Group {
+
+    private Logger log = Logger.getGlobal();
 
     private static final int FINAL_VALUE_TO_WIN = 2048;
     public static final int CELL_SIZE = 128;
@@ -56,7 +74,8 @@ public class GameManager extends Group {
     private final List<Integer> traversalX;
     private final List<Integer> traversalY;
     private final List<Location> locations = new ArrayList<>();
-    private final Map<Location, Tile> gameGrid;
+    //private final Map<Location, Tile> gameGrid;
+    private Map<Location, Tile> gameGrid = null;
     private final BooleanProperty gameWonProperty = new SimpleBooleanProperty(false);
     private final BooleanProperty gameOverProperty = new SimpleBooleanProperty(false);
     private final IntegerProperty gameScoreProperty = new SimpleIntegerProperty(0);
@@ -66,25 +85,37 @@ public class GameManager extends Group {
     private final BooleanProperty layerOnProperty = new SimpleBooleanProperty(false);
 
     // User Interface controls
-    private final VBox vGame = new VBox(50);
+    private final VBox vGame = new VBox(20);
     private final Group gridGroup = new Group();
 
-    private final HBox hTop = new HBox(0);
+    private final HBox hTop = new HBox(10);
     private final Label lblScore = new Label("0");
     private final Label lblPoints = new Label();
     private final HBox hOvrLabel = new HBox();
     private final HBox hOvrButton = new HBox();
-
-    public GameManager() {
-        this(DEFAULT_GRID_SIZE);
+    
+    private int moveGap = 1000;
+    private boolean ai = false;
+    private boolean autoAI = false;
+    private final CheckBox autoAiCheckBox = new CheckBox("Auto move");
+    private final CheckBox aiCheckBox = new CheckBox("Need help?");
+    private Game2048 game2048 = null;
+    private MyGiocatoreAutomatico giocatoreAutomatico = null;
+    private VBox controls = null;
+    private HBox speedControls = null;
+        
+    public GameManager(Game2048 game) {
+        this(DEFAULT_GRID_SIZE, game);
     }
 
-    public GameManager(int gridSize) {
+    public GameManager(int gridSize, Game2048 game) {
+        this.game2048 = game;
         this.gameGrid = new HashMap<>();
         this.gridSize = gridSize;
         this.traversalX = IntStream.range(0, gridSize).boxed().collect(Collectors.toList());
         this.traversalY = IntStream.range(0, gridSize).boxed().collect(Collectors.toList());
 
+        createMenuBar();
         createScore();
         createGrid();
         initGameProperties();
@@ -93,7 +124,7 @@ public class GameManager extends Group {
 
         this.setManaged(false);
     }
-
+    
     public void move(Direction direction) {
         if (layerOnProperty.get()) {
             return;
@@ -183,6 +214,41 @@ public class GameManager extends Group {
         parallelTransition.play();
         parallelTransition.getChildren().clear();
     }
+    
+    public void autoMove() {
+	    log.info("Doing an auto move.");
+            Direction move = null;
+            switch (giocatoreAutomatico.prossimaMossa(
+                    newRandomTile.getLocation(),
+                    newRandomTile.getValue())) {
+                case 0: move = Direction.UP; break;
+                case 1: move = Direction.RIGHT; break;
+                case 2: move = Direction.DOWN; break;
+                case 3: move = Direction.LEFT; break;
+                default: 
+                    throw new InvalidMoveException(
+                            "Invalid move from the GiocatoreAutomatico");
+            }
+            move(move);
+	    return;
+    }
+    
+    public Griglia creaGriglia() {
+        Griglia griglia = new MyGriglia();
+        for (int i = 0; i < gridSize; i++ ) {
+            for (int j = 0; j < gridSize; j++) {
+                Location l = new Location(i, j);
+                if (this.gameGrid.containsKey(l) && this.gameGrid.get(l) != null) {
+                    griglia.put(l, this.gameGrid.get(l).getValue());
+                }
+                else {
+                    griglia.put(l, -1);
+                }
+            }
+        }
+        log.log(Level.INFO, "Grid: \n{0}", griglia.toString());
+        return griglia;
+    }
 
     private Location findFarthestLocation(Location location, Direction direction) {
         Location farthest;
@@ -234,7 +300,114 @@ public class GameManager extends Group {
 
         return foundMergeableTile.getValue();
     }
+    
+    private void createMenuBar() {
+        
+        ArrayList<Double> speedValues = new ArrayList<>();
+        speedValues.add(0.5);
+        speedValues.add(1.0);
+        ChoiceBox<Double> gapCB = new ChoiceBox<>();
+        gapCB.getItems().addAll(speedValues);
+        gapCB.setValue(1.0);
+        // interfaccia ChangeListener<Number>
+        // metodo changed(ObservableValue ov, Number value, Number newValue)
+        gapCB.getSelectionModel().selectedIndexProperty()
+                .addListener((ov, v, nv) -> {
+            moveGap = (int) (1000 * (Double) gapCB.getItems().get((Integer) nv));
+            log.info("Move gap changed to " + moveGap);
+        });
+        
+        menuBar.getMenus().addAll(gameMenu);
+        menuBar.setLayoutX(0);
+        menuBar.setLayoutY(0);
+        
+        speedControls = new HBox(5);
+        Text speedControlsLabel = new Text("Time between moves (s):");
+        speedControls.setAlignment(Pos.CENTER);
+        speedControls.getChildren().addAll(speedControlsLabel, gapCB);
+        autoAiCheckBox.setAllowIndeterminate(false);
+        autoAiCheckBox.setOnAction((e) -> {
+            toggleAutoAI();
+        });
+        
+        aiCheckBox.setAllowIndeterminate(false);
+        aiCheckBox.setOnAction((e) -> {
+            toggleAI();
+        });
+        controls.setMaxWidth(240);
+        controls.setMinWidth(240);
+        controls.setMaxHeight(60);
+        controls.setMinHeight(60);
+        
+        controls.getChildren().addAll(aiCheckBox);
+        hTop.getChildren().add(controls);       
+    }
+    
+    public void toggleAI() {
+        if (!ai) {
+            log.info("Creating bot.");
+            giocatoreAutomatico = new MyGiocatoreAutomatico(creaGriglia());
+            ai = true;
+            aiCheckBox.setSelected(true);
+            controls.getChildren().add(autoAiCheckBox);
+        } else {
+            log.info("Destroying bot.");
+            giocatoreAutomatico = null;
+            ai = false;
+            aiCheckBox.setSelected(false);
+            if (autoAI) {
+                autoAiCheckBox.fire();
+            }
+            controls.getChildren().remove(autoAiCheckBox);
+        }
 
+    }
+    
+    public void toggleAutoAI() {
+         if (autoAI) {
+            autoAI = false;
+            autoAiCheckBox.setSelected(false);
+            controls.getChildren().remove(speedControls);
+        } else {
+            autoAI = true;
+            autoAiCheckBox.setSelected(true);
+            controls.getChildren().add(speedControls);
+        }
+    }
+    
+    public boolean isAutoAI() {
+        return autoAI;
+    }
+    
+    public boolean isAI() {
+        return this.ai;
+    } 
+    
+    public Thread aiThread() {
+        return new Thread( () -> {
+            log.info("Started AI thread.");
+            try {
+                Thread.sleep(2000);
+            } catch (InterruptedException e) {
+                log.info("AI thread manager interrupted.");
+                System.exit(1);
+            }
+            while (true) {
+                try {
+                    Thread.sleep(moveGap);
+                } catch (InterruptedException e) {
+                    log.info("AI thread manager interrupted.");
+                    System.exit(1);
+                }
+                if (ai && autoAI) {
+                    Platform.runLater(() -> {
+                        autoMove();
+                    });
+                }
+            }
+        });
+    }
+    
     private void createScore() {
         Label lblTitle = new Label("2048");
         lblTitle.getStyleClass().add("title");
@@ -243,21 +416,39 @@ public class GameManager extends Group {
         HBox hFill = new HBox();
         HBox.setHgrow(hFill, Priority.ALWAYS);
         hFill.setAlignment(Pos.CENTER);
+        HBox hFill2 = new HBox();
+        HBox.setHgrow(hFill2, Priority.ALWAYS);
+        hFill2.setAlignment(Pos.CENTER);
         VBox vScore = new VBox();
         vScore.setAlignment(Pos.CENTER);
+        HBox hTitle = new HBox();
+        hTitle.getChildren().addAll(lblTitle, lblSubtitle);
+        VBox vTitle = new VBox();
+        VBox vFill = new VBox();
+        VBox.setVgrow(vFill, Priority.ALWAYS);
+        vFill.setAlignment(Pos.CENTER);
+        VBox vFill2 = new VBox();
+        VBox.setVgrow(vFill2, Priority.ALWAYS);
+        vFill2.setAlignment(Pos.CENTER);
+        vTitle.getChildren().addAll(vFill, hTitle, vFill2);
         vScore.getStyleClass().add("vbox");
         Label lblTit = new Label("SCORE");
         lblTit.getStyleClass().add("titScore");
         lblScore.getStyleClass().add("score");
         lblScore.textProperty().bind(gameScoreProperty.asString());
         vScore.getChildren().addAll(lblTit, lblScore);
+        lblTitle.setAlignment(Pos.CENTER);
+        lblSubtitle.setAlignment(Pos.CENTER);
 
-        hTop.getChildren().addAll(lblTitle, lblSubtitle, hFill, vScore);
+        hTop.getChildren().addAll(hFill2, vTitle, hFill, vScore);
         hTop.setMinSize(GRID_WIDTH, TOP_HEIGHT);
         hTop.setPrefSize(GRID_WIDTH, TOP_HEIGHT);
         hTop.setMaxSize(GRID_WIDTH, TOP_HEIGHT);
 
         vGame.getChildren().add(hTop);
+        vGame.setAlignment(Pos.TOP_CENTER);
+        //vGame.setLayoutX(-40); // sistemazione provvisoria
+        //vGame.setLayoutY(-40); // idem
         getChildren().add(vGame);
 
         lblPoints.getStyleClass().add("points");
@@ -302,6 +493,10 @@ public class GameManager extends Group {
     private void initGameProperties() {
         gameOverProperty.addListener((observable, oldValue, newValue) -> {
             if (newValue) {
+                if (autoAI)
+                    toggleAutoAI();
+                if (ai)
+                    toggleAI();
                 layerOnProperty.set(true);
                 hOvrLabel.getStyleClass().setAll("over");
                 hOvrLabel.setMinSize(GRID_WIDTH, GRID_WIDTH);
@@ -328,6 +523,10 @@ public class GameManager extends Group {
 
         gameWonProperty.addListener((observable, oldValue, newValue) -> {
             if (newValue) {
+                if (autoAI)
+                    toggleAutoAI();
+                if (ai)
+                    toggleAI();
                 layerOnProperty.set(true);
                 hOvrLabel.getStyleClass().setAll("won");
                 hOvrLabel.setMinSize(GRID_WIDTH, GRID_WIDTH);
@@ -430,6 +629,7 @@ public class GameManager extends Group {
         initializeLocationsInGameGrid();
 
         Tile tile0 = Tile.newRandomTile();
+        newRandomTile = tile0; // pass new tile for the autoplayer
         List<Location> randomLocs = new ArrayList<>(locations);
         Collections.shuffle(randomLocs);
         Iterator<Location> locs = randomLocs.stream().limit(2).iterator();
@@ -438,6 +638,7 @@ public class GameManager extends Group {
         Tile tile1 = null;
         if (new Random().nextFloat() <= 0.8) { // gives 80% chance to add a second tile
             tile1 = Tile.newRandomTile();
+            newRandomTile = tile1; // pass new tile for the autoplayer
             if (tile1.getValue() == 4 && tile0.getValue() == 4) {
                 tile1 = Tile.newTile(2);
             }
@@ -475,6 +676,8 @@ public class GameManager extends Group {
     private void addAndAnimateRandomTile(Location randomLocation) {
         Tile tile = Tile.newRandomTile();
         tile.setLocation(randomLocation);
+        log.log(Level.INFO, "Added random tile. {0}", tile.toString());
+        newRandomTile = tile;
 
         double layoutX = tile.getLocation().getLayoutX(CELL_SIZE) - (tile.getMinWidth() / 2);
         double layoutY = tile.getLocation().getLayoutY(CELL_SIZE) - (tile.getMinHeight() / 2);

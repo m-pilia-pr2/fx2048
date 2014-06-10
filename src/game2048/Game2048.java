@@ -1,29 +1,57 @@
 package game2048;
 
+import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.application.Application;
 import javafx.application.ConditionalFeature;
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.geometry.Bounds;
+import javafx.geometry.Pos;
 import javafx.scene.Cursor;
+import javafx.scene.Group;
 import javafx.scene.Scene;
+import javafx.scene.control.Button;
 import javafx.scene.input.KeyCode;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
-import javafx.stage.Stage;
+import javafx.scene.layout.VBox;
+import javafx.scene.text.Text;
+import javafx.stage.Modality;
+import javafx.stage.Stage; 
 
 /**
  * @author bruno.borges@oracle.com
  */
 public class Game2048 extends Application {
 
+    private final int MAIN_WINDOW_WIDTH = 600;
+    private final int MAIN_WINDOW_HEIGHT = 720;
+    
     private GameManager gameManager;
     private Bounds gameBounds;
+    private Logger log;
+    private Thread aiThread;
+    private Stage primaryStage = null;
 
     @Override
     public void start(Stage primaryStage) {
-        gameManager = new GameManager();
+	List<String> args = this.getParameters().getRaw();
+	log = Logger.getGlobal();
+	log.setLevel(Level.OFF);
+	for (String s : args) {
+		if (s.equals("-d")) {
+			log.setLevel(Level.ALL);
+		}
+	}
+
+        this.primaryStage = primaryStage;
+	gameManager = new GameManager(this);
         gameBounds = gameManager.getLayoutBounds();
+        
+        aiThread = gameManager.aiThread();
+        aiThread.start();
 
         StackPane root = new StackPane(gameManager);
         root.setPrefSize(gameBounds.getWidth(), gameBounds.getHeight());
@@ -34,7 +62,7 @@ public class Game2048 extends Application {
         root.widthProperty().addListener(resize);
         root.heightProperty().addListener(resize);
 
-        Scene scene = new Scene(root, 600, 720);
+        Scene scene = new Scene(root, MAIN_WINDOW_WIDTH, MAIN_WINDOW_HEIGHT);
         scene.getStylesheets().add("game2048/game.css");
         addKeyHandler(scene);
         addSwipeHandlers(scene);
@@ -47,6 +75,12 @@ public class Game2048 extends Application {
         if (Platform.isSupported(ConditionalFeature.INPUT_TOUCH)) {
             scene.setCursor(Cursor.NONE);
         }
+        
+        primaryStage.setOnCloseRequest( (we) -> {
+            log.info("attempt to close primaryStage");
+            exitGame();
+            we.consume();
+        });
 
         primaryStage.setTitle("2048FX");
         primaryStage.setScene(scene);
@@ -70,11 +104,24 @@ public class Game2048 extends Application {
                 gameManager.restoreSession();
                 return;
             }
-            if (keyCode.isArrowKey() == false) {
+            if (keyCode.equals(KeyCode.H)) {
+                gameManager.toggleAI();
+            }
+            if (keyCode.equals(KeyCode.A)) {
+                if (gameManager.isAI())
+                    gameManager.toggleAutoAI();
+            }
+            if (gameManager.isAI() && keyCode.equals(KeyCode.N)) {
+                log.info("Doing an auto move on manual request.");
+                gameManager.autoMove();
+            }
+            if (keyCode.isArrowKey() == false) { // only arrows after this!!!
                 return;
             }
-            Direction direction = Direction.valueFor(keyCode);
-            gameManager.move(direction);
+            if (!gameManager.isAI()) { // umano può giocare solo se non c'è auto
+                Direction direction = Direction.valueFor(keyCode);
+                gameManager.move(direction);
+            }
         });
     }
 
@@ -84,7 +131,7 @@ public class Game2048 extends Application {
         scene.setOnSwipeLeft(e -> gameManager.move(Direction.LEFT));
         scene.setOnSwipeDown(e -> gameManager.move(Direction.DOWN));
     }
-
+    
     /**
      * @param args the command line arguments
      */
