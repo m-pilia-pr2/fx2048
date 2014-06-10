@@ -454,7 +454,7 @@ public class GameManager extends Group {
      */
     private void createControls() {
         ArrayList<Double> speedValues = new ArrayList<>();
-        speedValues.add(0.1);
+        //speedValues.add(0.1);
         speedValues.add(0.2);
         speedValues.add(0.5);
         speedValues.add(1.0);
@@ -524,7 +524,7 @@ public class GameManager extends Group {
         });
         MenuItem credits = new MenuItem("Credits");
         credits.setOnAction((e) -> {
-
+            
         });
         MenuItem help = new MenuItem("Help");
         help.setOnAction((e) -> {
@@ -699,8 +699,8 @@ public class GameManager extends Group {
                 save,
                 restore,
                 restart,
-                credits,
-                help,
+                //credits, //TODO
+                //help,
                 exit);
 
         menuBar.getMenus().addAll(gameMenu, settings);

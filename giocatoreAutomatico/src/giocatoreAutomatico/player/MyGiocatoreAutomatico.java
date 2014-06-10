@@ -100,9 +100,14 @@ public class MyGiocatoreAutomatico implements GiocatoreAutomatico {
         
         int dir; // value for the move selected by AI
         switch (style) {
-            case 1: dir = this.nextMoveRand(); break;
-            case 2: dir = this.nextMoveBlind(); break;
-            //case 9: dir = this.nextMoveBlind2(); break;
+            case 1: 
+                do {
+                    dir = this.nextMoveRand();
+                } while (!griglia.isValida(dir));
+                break;
+            case 2: 
+                dir = this.nextMoveBlind(); 
+                break;
             default: 
                 if (this.griglia.get(DEPTH_LOCATION) != null
                         && this.griglia.get(DEPTH_LOCATION) > 0)
