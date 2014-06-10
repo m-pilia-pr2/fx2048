@@ -51,6 +51,7 @@ public class MyGiocatoreAutomatico implements GiocatoreAutomatico {
         switch (mode) {
             case 0: dir = this.nextMoveRand(); break;
             case 1: dir = this.nextMoveBlind(); break;
+            case 2: dir = this.nextMoveBlind2(); break;
             default: throw new IllegalStateException("Something is broken!");
         }
         //System.out.println("" + dir + griglia.isValida(dir));
@@ -136,3 +137,42 @@ public class MyGiocatoreAutomatico implements GiocatoreAutomatico {
             default: throw new IllegalStateException("Something is broken!");
         }
     }
+    
+    /**
+     * Like the previous, but trying every time a down or right move if possible
+     * @return 0=ALTO; 1=DX; 2=BASSO; 3=SX
+     */
+    private int nextMoveBlind2() {
+        switch (naiveStep) {
+            case 2: // try down first
+                naiveStep = 1;
+                if (griglia.isValida(2)) 
+                    return 2;
+                if (griglia.isValida(1))
+                    return 1;
+                if (griglia.isValida(3)) {
+                    naiveStep = 2; // the next try will be for down
+                    return 3;
+                }
+                if (griglia.isValida(0)) {
+                    naiveStep = 2; // the next try will be for down
+                    return 0;
+                }
+            case 1: // try right first
+                naiveStep = 2;
+                if (griglia.isValida(1)) 
+                    return 1;
+                if (griglia.isValida(2))
+                    return 2;
+                if (griglia.isValida(3)) {
+                    naiveStep = 2; // the next try will be for down
+                    return 3;
+                }
+                if (griglia.isValida(0)) {
+                    naiveStep = 2; // the next try will be for down
+                    return 0;
+                }
+            default: throw new IllegalStateException("Something is broken around here!");
+        }
+    }
+}
