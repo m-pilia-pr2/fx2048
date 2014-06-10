@@ -22,12 +22,14 @@ separated Netbeans 8 project: the game2048 depends directly on the other project
 while giocatoreAutomatico depends on a jar library automatically placed in 
 /giocatoreAutomatico/lib/Game2048.jar while building game2048, in order to break 
 the cyclic dependency between the projects (see the ant build file in 
-game2048/nbproject/build-impl.xml, under the post-jar section).
+game2048/nbproject/build-impl.xml, under the post-jar section). However, for 
+more compatibility, a copy of the interfaces GiocatoreAutomatico and Griglia has 
+been included in the game2048.jar too.
 
 You will need [Java 8](http://www.oracle.com/technetwork/java/javase/downloads/index.html)
 and [ANT](http://ant.apache.org/) installed to build the project. You can build 
-the two components separately, launching ant in each project root with the 
-following command:
+the two components separately, launching ant in each project root (both 
+giocatoreAutomatico/ and fx2048/ folders) with the following command:
 
 ```bash
 ant
@@ -40,7 +42,7 @@ classpath, and each component is packed in a separatred jar file. Note that
 giocatoreAutomatico.jar is only a non-runnable Java library, while the 
 game2048.jar is a runnable jar packaging a JavaFX8 application, but it's useless
 while the other jar is not in the java classpath (the application will probably 
-throw some ClassNotFound exception).
+throw some ClassNotFoundException).
 
 After building the project, you can run the application launching the following 
 command in the project root folder:
@@ -56,12 +58,12 @@ Playing instructions
 ====================
 The game is played as usual, with the arrow keys or swiping on the touchscreen 
 (from ARM devices). If you want to let the computer play himself, select the 
-"Need help?" checkbox, located in the main window. After selectin it, you cannot
+"Need help?" checkbox, located in the main window. After selecting it, you cannot
 move the tiles anymore with arrow keys, but you can ask the computer to do an 
 automatic move by pressing the "n" (next) key. If you select the 
 "Auto move" checkbox, the game plays a move on a regular time 
-interval, customizable through the choichebox on the main window, under the two 
-checkboxes.
+interval, customizable through the choichebox on the main window, located under 
+the two checkboxes.
 
 In the "Settings" menu you can choose the winning value and to stop or not to 
 stop the game when the winning value is reached.
@@ -71,11 +73,11 @@ Some technical details
 The application has a menubar with two menus. The first offers the common menu 
 commands (save, restore, exit) and the second provides some options. The 
 player has three different playing styles, and the playing style may be chosen 
-in the "Settings" menu, only by enabling "Advanced options". Theese are a 
-feature going out of the project specifications, so they are disabled by 
-default. Indeed, when Advanced options are enabled, a value is passed to the 
+in the "Settings" menu, only by enabling "Advanced options". Theese are 
+features going out of the project specifications, so they are disabled by 
+default. Indeed, when the Advanced options are enabled, a value is passed to the 
 automatic player through the grid, mapped in the location (-1,-1), so the 
-grid has more than 16 keys indexed. When Advanced options are diabled, the
+grid has more than 16 keys indexed. When the Advanced options are disabled, the
 grid contains only 16 keys. In a similar manner, an integer representing the 
 search depth is passed through the (-1,-2) location (only with minimax playing 
 styles). 
@@ -98,9 +100,9 @@ asks confirmationt with a popup window.
 
 Playing Styles
 ==============
-The automatic player has three different playing styles:
-*random move
-*blind (folowing a blind strategy)
+The automatic player has three different playing styles:<br />
+*random move<br />
+*blind (folowing a blind strategy)<br />
 *minimax
 
 Superseeding on the first two, the third is a simple implementation of a search 
