@@ -6,11 +6,11 @@ The original game is a [Javascript version](https://github.com/gabrielecirulli/2
 
 Structure and building
 =======================
-The most modular packaging has been chosed for the project structure, avoiding 
+The most modular packaging has been chose for the project structure, avoiding 
 code repetitions or the presence of the same file in more than one project or 
-jar. Another way was putting both the packages giocatoreAutomatico and game2048
+jar. Another way was to put both the packages giocatoreAutomatico and game2048
 in the same jar, with the package giocatoreAutomatico.player in the other jar. 
-This implementation would be easier but troubles may rise when playing the 
+That implementation would be easier but troubles may rise when playing the 
 giocatoreAutomatico.player with another implementation of the gui wich not 
 provides the right interfaces (package giocatoreAutomatico) in his jar file.
 
@@ -87,11 +87,11 @@ other implementations of the project. When no value is passed, the automatic
 player is automatically set to minimax style with a depth of 6.
 
 The graphical application generates a grid for the automatic player. 
-The grid object is definited once in the GameManager and the grid maker method 
+The grid object is definite once in the GameManager and the grid maker method 
 adjourns that object every time is needed. This way has been chosed because 
 some other methods need access to the grid (in order to write the advanced 
 settings, see the previous explaination). However, this grid object is fully
-independent from the grid rapresentation used in the graphical application and
+independent from the grid representation used in the graphical application and
 is a write only object for the GameManager, so an eventual compromission of the 
 grid by an automatic player should not compromise the application status.
 
