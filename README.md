@@ -72,10 +72,10 @@ Some technical details
 ======================
 The application has a menubar with two menus. The first offers the common menu 
 commands (save, restore, exit) and the second provides some options. The 
-player has three different playing styles, and the playing style may be chosen 
-in the "Settings" menu, only by enabling "Advanced options". Theese are 
-features going out of the project specifications, so they are disabled by 
-default. Indeed, when the Advanced options are enabled, a value is passed to the 
+player has three different playing styles, and the playing style is selectable 
+in the "Settings" menu, only by enabling "Advanced options". Theese features are 
+out of the project specifications, so they are disabled by default. 
+Indeed, when the Advanced options are enabled, a value is passed to the 
 automatic player through the grid, mapped in the location (-1,-1), so the 
 grid has more than 16 keys indexed. When the Advanced options are disabled, the
 grid contains only 16 keys. In a similar manner, an integer representing the 
