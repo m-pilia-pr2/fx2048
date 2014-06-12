@@ -117,6 +117,7 @@ it usually passes the 2048 tile (more than 20.000 points) and often reaches
 80.000 points. It's a quite simple implementation and there is a lot of space
 for optimization and improvement of the AI.
 
+![alt Screenshot](https://db.tt/DOFDOtLd)
 
 License
 ===================
