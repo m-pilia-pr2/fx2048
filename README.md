@@ -114,12 +114,12 @@ independent from the GUI.
 
 The algorithm has not been tested in a statistically significative way, however 
 it usually passes the 2048 tile (more than 20.000 points) and often reaches 
-80.000 points. It's a quite simple implementation and there is a lot of space
+80.000 points. This is a very quick and simple implementation, and there is a lot of space
 for optimization and improvement of the AI.
 
 ![alt Screenshot](https://db.tt/DOFDOtLd)
 
 License
 ===================
-The project is licensed under GPL 3. See [LICENSE](https://raw.githubusercontent.com/brunoborges/fx2048/master/LICENSE)
+The project is licensed under GPL 3. See [LICENSE](/fx2048/LICENSE)
 file for the full license.
