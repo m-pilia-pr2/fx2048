@@ -16,9 +16,10 @@
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */ 
 
-package giocatoreAutomatico;
+package giocatoreAutomatico.player;
 
 import game2048.Location;
+import giocatoreAutomatico.Griglia;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;

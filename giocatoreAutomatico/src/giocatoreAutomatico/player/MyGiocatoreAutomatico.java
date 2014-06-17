@@ -22,7 +22,6 @@ import giocatoreAutomatico.*;
 
 import game2048.Location;
 import java.util.Random;
-import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -30,7 +29,7 @@ import java.util.logging.Logger;
  * This class implements the interface GiocatoreAutomatico, providing objects
  * able to play 2048. This player is able to play with 3 differents styles. The
  * default style uses a search algorithm to evaluate the position. The search 
- * depth and the playing style are chosen passing opportune values though the 
+ * depth and the playing style are chosen passing opportune values through the 
  * grid. The style should saved in Location(-1, -1) (1 = random, 2 = blind,
  * 3 = minimax) and the search depth in Location(-1, -2) (int value for depth).
  * If the GUI does not provide theese values or provides invalid values,
@@ -40,15 +39,15 @@ import java.util.logging.Logger;
 public class MyGiocatoreAutomatico implements GiocatoreAutomatico {
     
     private int searchDepth;
-    private int gridSize = 4; // provisional hard-coded grid size
-    private double evalBase = 0.25; // provisional
-    private int mode = 3; // provisional hard-coded selector
-    private int naiveStep = 2;
-    private Random rand = new Random();
-    private final int defaultStyle = 3;
-    private final int defaultDepth = 6;
-    private final Location PLAYING_STYLE_LOCATION = new Location(-1, -1);
-    private final Location DEPTH_LOCATION = new Location(-1, -2);
+    private int gridSize;
+    private double evalBase;
+    private int mode;
+    private int step;
+    private final Random rand;
+    private final int defaultStyle;
+    private final int defaultDepth;
+    private final Location PLAYING_STYLE_LOCATION;
+    private final Location DEPTH_LOCATION;
     
     private final Logger log = Logger.getGlobal();
     
@@ -59,12 +58,21 @@ public class MyGiocatoreAutomatico implements GiocatoreAutomatico {
      * void grid.
      */
     public MyGiocatoreAutomatico() {
+        this.defaultDepth = 6;
+        this.defaultStyle = 3;
+        this.step = 2;
+        this.mode = 3; // provisional hard-coded selector
+        this.gridSize = 4; // provisional hard-coded grid size
+        this.evalBase = 0.25; // provisional
+        this.DEPTH_LOCATION = new Location(-1, -2);
+        this.PLAYING_STYLE_LOCATION = new Location(-1, -1);
         this.griglia = new MyGriglia();
+        this.rand = new Random();
     }
     
     /**
      * This is the constructor for the class. The player is initialized with 
-     * the providen grid.
+     * the provided grid.
      * @param g Grid for the player.
      */
     public MyGiocatoreAutomatico(Griglia g) {
@@ -134,70 +142,70 @@ public class MyGiocatoreAutomatico implements GiocatoreAutomatico {
     }
     
     /**
-     * This method provides a move though a blind strategy.
+     * This method provides a move through a blind strategy.
      * @return 0=ALTO; 1=DX; 2=BASSO; 3=SX
      */
     private int nextMoveBlind() {
-        switch (naiveStep) {
+        switch (step) {
             case 0: 
                 if (griglia.isValida(3)) {
-                    naiveStep = 1;
+                    step = 1;
                     return 3;
                 }
                 if (griglia.isValida(1)) {
-                    naiveStep = 2;
+                    step = 2;
                     return 1;
                 }
                 if (griglia.isValida(2)) {
-                    naiveStep = 3;
+                    step = 3;
                     return 2;
                 }
-                naiveStep = 1; // in order to return down
+                step = 1; // in order to return down
                 return 0;
             case 1:
                 if (griglia.isValida(2)) {
-                    naiveStep = 2;
+                    step = 2;
                     return 2;
                 }
                 if (griglia.isValida(3)) {
-                    naiveStep = 1;
+                    step = 1;
                     return 3;
                 }
                 if (griglia.isValida(1)) {
-                    naiveStep = 3;
+                    step = 3;
                     return 1;
                 }
-                naiveStep = 4; // unnormal!
+                step = 4; // unnormal!
                 return 0;
             case 2:
                 if (griglia.isValida(1)) {
-                    naiveStep = 3;
+                    step = 3;
                     return 1;
                 }
                 if (griglia.isValida(3)) {
-                    naiveStep = 1;
+                    step = 1;
                     return 3;
                 }
                 if (griglia.isValida(2)) {
-                    naiveStep = 3;
+                    step = 3;
                     return 2;
                 }
-                naiveStep = 1; // in order to return down
+                step = 1; // in order to return down
                 return 0;
             case 3:
                 if (griglia.isValida(2)) {
-                    naiveStep = 0;
+                    step = 0;
                     return 2;
                 }
                 if (griglia.isValida(3)) {
-                    naiveStep = 1;
+                    step = 1;
                     return 3;
                 }
                 if (griglia.isValida(1)) {
-                    naiveStep = 3;
+                    step = 3;
                     return 1;
                 }
-                naiveStep = 1; // in order to return down
+                step = 1; // in order to return down
                 return 0;
             default: throw new IllegalStateException("Something is broken!");
         }
@@ -209,33 +217,33 @@ public class MyGiocatoreAutomatico implements GiocatoreAutomatico {
      * @return 0=ALTO; 1=DX; 2=BASSO; 3=SX
      */
     private int nextMoveBlind2() {
-        switch (naiveStep) {
+        switch (step) {
             case 2: // try down first
-                naiveStep = 1;
+                step = 1;
                 if (griglia.isValida(2)) 
                     return 2;
                 if (griglia.isValida(1))
                     return 1;
                 if (griglia.isValida(3)) {
-                    naiveStep = 2; // the next try will be for down
+                    step = 2; // the next try will be for down
                     return 3;
                 }
                 if (griglia.isValida(0)) {
-                    naiveStep = 2; // the next try will be for down
+                    step = 2; // the next try will be for down
                     return 0;
                 }
             case 1: // try right first
-                naiveStep = 2;
+                step = 2;
                 if (griglia.isValida(1)) 
                     return 1;
                 if (griglia.isValida(2))
                     return 2;
                 if (griglia.isValida(3)) {
-                    naiveStep = 2; // the next try will be for down
+                    step = 2; // the next try will be for down
                     return 3;
                 }
                 if (griglia.isValida(0)) {
-                    naiveStep = 2; // the next try will be for down
+                    step = 2; // the next try will be for down
                     return 0;
                 }
             default: throw new IllegalStateException("Something is broken around here!");
@@ -243,7 +251,7 @@ public class MyGiocatoreAutomatico implements GiocatoreAutomatico {
     }
     
     /**
-     * This method provides a move though a simple implementation of a search
+     * This method provides a move through a simple implementation of a search
      * algorithm, similar to a minimax.
      * @param grid The current grid.
      * @param depth Depth for the search.
@@ -254,33 +262,6 @@ public class MyGiocatoreAutomatico implements GiocatoreAutomatico {
         res = this.recursiveSearch(grid, depth, depth, 0.9);
         return (int) res[0];
     }
-
-    /* // first AI without estimation on new random tiles
-    private double[] nextMoveRecur(MyGriglia grid, int depth, int maxDepth, double base) {
-        double bestScore = -1;
-        double bestMove = 0;
-        for (int m = 0; m < 4; m++) {
-            double score = 0;
-            if (grid.isValida(m)) {
-                MyGriglia newBoard = new MyGriglia(grid);
-                newBoard.move(m);
-
-                score = this.evaluate(newBoard);
-                if (depth != 0) {
-                    double[] res;
-                    res = this.nextMoveRecur(newBoard, depth - 1, maxDepth, 0.9);
-                    score += res[1] * Math.pow(base, maxDepth - depth + 1);
-                }
-
-                if (score > bestScore) {
-                    bestMove = m;
-                    bestScore = score;
-                }
-            }
-        }
-        double[] out = {bestMove, bestScore};
-        return out;
-    }*/
     
     /**
      * This is a recursive method used in the research for the best move. It 
@@ -328,7 +309,7 @@ public class MyGiocatoreAutomatico implements GiocatoreAutomatico {
                             worstValue = 2;
                         }
                     }
-                    // 4 random tile prevision (get the game worse...)
+                    // 4 random tile prevision (gets the game worse...)
                     /*for (Location l : newBoard.freeLocations()) {
                         //System.out.print(l);
                         MyGriglia newBoardAdded = new MyGriglia(newBoard);

@@ -16,7 +16,7 @@
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */ 
 
-package giocatoreAutomatico;
+package giocatoreAutomatico.player;
 
 import java.util.ArrayList;
 
@@ -24,7 +24,8 @@ import java.util.ArrayList;
  * This class provides a Row object representing an array of ordered tiles. 
  * It's intended to be used in a player-side re-implementation of the grid, in
  * order to calculate movements for the IA. It may represent a row or a column
- * of the grid.
+ * of the grid. This code has not been optimized, ArrayList should be 
+ * substituted with simple array, for performace purpose and cleaner coding.
  * @author Martino Pilia
  */
 public class Row {
