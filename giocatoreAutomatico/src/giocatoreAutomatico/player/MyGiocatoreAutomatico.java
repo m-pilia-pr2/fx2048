@@ -68,6 +68,8 @@ public class MyGiocatoreAutomatico implements GiocatoreAutomatico {
         this.PLAYING_STYLE_LOCATION = new Location(-1, -1);
         this.griglia = new MyGriglia();
         this.rand = new Random();
+	if (log.getLevel() == null)
+		log.setLevel(Level.OFF);
     }
     
     /**
