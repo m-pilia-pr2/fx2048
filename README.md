@@ -87,7 +87,7 @@ other implementations of the project. When no value is passed, the automatic
 player is automatically set to minimax style with a depth of 6.
 
 The graphical application generates a grid for the automatic player. 
-The grid object is definite once in the GameManager and the grid maker method 
+The grid object is defined once in the GameManager and the grid maker method 
 adjourns that object every time is needed. This way has been chosen because 
 some other methods need access to the grid (in order to write the advanced 
 settings, see the previous explaination). However, this grid object is fully
