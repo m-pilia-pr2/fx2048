@@ -35,6 +35,12 @@ giocatoreAutomatico/ and fx2048/ folders) with the following command:
 ant
 ```
 
+If you have a working installation of GNU Make, you can build the whole project at once using the provided makefile, just running from the root folder:
+
+```bash
+make
+```
+
 Running fx2048Auto
 ===================
 In order to work, the game needs each of the two components is avaible in the 
