@@ -33,8 +33,7 @@
  *
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */ 
-
+ */
 package game2048;
 
 import giocatoreAutomatico.GiocatoreAutomatico;
@@ -84,6 +83,7 @@ import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.RadioMenuItem;
 import javafx.scene.control.ToggleGroup;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -96,8 +96,9 @@ import javafx.stage.Stage;
 import javafx.util.Duration;
 
 /**
- * This class rapresent an objet used by the Game2048 application, 
- * drawing the scene and providing core functionality for the game.
+ * This class rapresent an objet used by the Game2048 application, drawing the
+ * scene and providing core functionality for the game.
+ *
  * @author bruno
  */
 public class GameManager extends Group {
@@ -111,7 +112,7 @@ public class GameManager extends Group {
     private static final int DEFAULT_GRID_SIZE = 4;
     private static final int BORDER_WIDTH = (14 + 2) / 2;
     // grid_width=4*cell_size + 2*cell_stroke/2d (14px css)+2*grid_stroke/2d (2 px css)
-    private static final int GRID_WIDTH 
+    private static final int GRID_WIDTH
             = CELL_SIZE * DEFAULT_GRID_SIZE + BORDER_WIDTH * 2;
     private static final int TOP_HEIGHT = 92;
 
@@ -122,19 +123,19 @@ public class GameManager extends Group {
     private final List<Location> locations = new ArrayList<>();
     private final Map<Location, Tile> gameGrid = new HashMap<>();
     //private Map<Location, Tile> gameGrid = null;
-    private final BooleanProperty gameWonProperty 
+    private final BooleanProperty gameWonProperty
             = new SimpleBooleanProperty(false);
-    private final BooleanProperty gameOverProperty 
+    private final BooleanProperty gameOverProperty
             = new SimpleBooleanProperty(false);
-    private final IntegerProperty gameScoreProperty 
+    private final IntegerProperty gameScoreProperty
             = new SimpleIntegerProperty(0);
-    private final IntegerProperty gameMovePoints 
+    private final IntegerProperty gameMovePoints
             = new SimpleIntegerProperty(0);
-    private final Set<Tile> mergedToBeRemoved 
+    private final Set<Tile> mergedToBeRemoved
             = new HashSet<>();
-    private final ParallelTransition parallelTransition 
+    private final ParallelTransition parallelTransition
             = new ParallelTransition();
-    private final BooleanProperty layerOnProperty 
+    private final BooleanProperty layerOnProperty
             = new SimpleBooleanProperty(false);
 
     // User Interface controls
@@ -167,9 +168,11 @@ public class GameManager extends Group {
     private final int MAX_DEPTH = 7;
     private final Location PLAYING_STYLE_LOCATION = new Location(-1, -1);
     private final Location DEPTH_LOCATION = new Location(-1, -2);
+    private boolean autoMoving = false;
 
     /**
      * This is the constructor for the class.
+     *
      * @param game A reference to the invoker Game2048 object.
      */
     public GameManager(Game2048 game) {
@@ -178,6 +181,7 @@ public class GameManager extends Group {
 
     /**
      * This is the constructor for the class.
+     *
      * @param gridSize Size for the game grid.
      * @param game A reference to the invoker Game2048 object.
      */
@@ -203,8 +207,9 @@ public class GameManager extends Group {
     }
 
     /**
-     * This method moves the tiles in the desired direction, following 
-     * game rules.
+     * This method moves the tiles in the desired direction, following game
+     * rules.
+     *
      * @param direction Desired direction for the move.
      */
     public void move(Direction direction) {
@@ -220,12 +225,12 @@ public class GameManager extends Group {
 
         gameMovePoints.set(0);
 
-        Collections.sort(traversalX, 
-                direction.getX() == 1 ? 
-                        Collections.reverseOrder() : Integer::compareTo);
-        Collections.sort(traversalY, 
-                direction.getY() == 1 ? 
-                        Collections.reverseOrder() : Integer::compareTo);
+        Collections.sort(traversalX,
+                direction.getX() == 1
+                ? Collections.reverseOrder() : Integer::compareTo);
+        Collections.sort(traversalY,
+                direction.getY() == 1
+                ? Collections.reverseOrder() : Integer::compareTo);
         final int tilesWereMoved = traverseGrid((int x, int y) -> {
             Location thisloc = new Location(x, y);
             Tile tile = gameGrid.get(thisloc);
@@ -238,8 +243,8 @@ public class GameManager extends Group {
             Tile tileToBeMerged = nextLocation
                     .isValidFor(gridSize) ? gameGrid.get(nextLocation) : null;
 
-            if (tileToBeMerged != null 
-                    && tileToBeMerged.getValue().equals(tile.getValue()) 
+            if (tileToBeMerged != null
+                    && tileToBeMerged.getValue().equals(tile.getValue())
                     && !tileToBeMerged.isMerged()) {
                 tileToBeMerged.merge(tile);
 
@@ -251,12 +256,12 @@ public class GameManager extends Group {
                 parallelTransition.getChildren().add(hideTileToBeMerged(tile));
                 mergedToBeRemoved.add(tile);
 
-                gameMovePoints.set(gameMovePoints.get() 
+                gameMovePoints.set(gameMovePoints.get()
                         + tileToBeMerged.getValue());
-                gameScoreProperty.set(gameScoreProperty.get() 
+                gameScoreProperty.set(gameScoreProperty.get()
                         + tileToBeMerged.getValue());
 
-                if ((tileToBeMerged.getValue() == finalValueToWin) 
+                if ((tileToBeMerged.getValue() == finalValueToWin)
                         && stopAtWinningScore) {
                     gameWonProperty.set(true);
                 }
@@ -326,6 +331,10 @@ public class GameManager extends Group {
                 return;
             }
         }
+        
+        synchronized (giocatoreAutomatico) { // avoid conflicts with human moves
+            autoMoving = true;
+        }
 
         log.info("Doing an auto move.");
         Direction move = null;
@@ -346,14 +355,20 @@ public class GameManager extends Group {
                 throw new InvalidMoveException(
                         "Invalid move from the GiocatoreAutomatico");
         }
+        
+        synchronized (giocatoreAutomatico) {
+            autoMoving = false;
+        }
+        
         move(move);
     }
 
     /**
      * This method return a Griglia object representing the current position on
      * the game grid. Attention: this method adjourns and returns always the
-     * same object, wich is shared with other methods. This is the behaviour 
+     * same object, wich is shared with other methods. This is the behaviour
      * because other methods need to modify the grid under some circumstances.
+     *
      * @return An object rapresenting the current game grid.
      */
     public Griglia creaGriglia() {
@@ -361,7 +376,7 @@ public class GameManager extends Group {
         for (int i = 0; i < gridSize; i++) {
             for (int j = 0; j < gridSize; j++) {
                 Location l = new Location(i, j);
-                if (this.gameGrid.containsKey(l) 
+                if (this.gameGrid.containsKey(l)
                         && this.gameGrid.get(l) != null) {
                     griglia.put(l, this.gameGrid.get(l).getValue());
                 } else {
@@ -374,31 +389,32 @@ public class GameManager extends Group {
     }
 
     /**
-     * Search for the farthest location from the selected location along the 
+     * Search for the farthest location from the selected location along the
      * desired direction.
+     *
      * @param location Desired location to start from.
      * @param direction Desired direction.
-     * @return The farthest location from the desired location along the 
+     * @return The farthest location from the desired location along the
      * selected direction.
      */
     private Location findFarthestLocation(
-            Location location, 
+            Location location,
             Direction direction) {
         Location farthest;
 
         do {
             farthest = location;
             location = farthest.offset(direction);
-        } 
-        while (location.isValidFor(gridSize) && gameGrid.get(location) == null);
+        } while (location.isValidFor(gridSize) && gameGrid.get(location) == null);
 
         return farthest;
     }
 
     /**
      * This method transverses the grid.
+     *
      * @param func
-     * @return 
+     * @return
      */
     private int traverseGrid(IntBinaryOperator func) {
         AtomicInteger at = new AtomicInteger();
@@ -412,8 +428,9 @@ public class GameManager extends Group {
     }
 
     /**
-     * This method verifies if merging tiles movements are avaible in the current 
-     * position.
+     * This method verifies if merging tiles movements are avaible in the
+     * current position.
+     *
      * @return <code>true</code> if merge movements are avaible,
      * <code>false</code> otherwise.
      */
@@ -423,33 +440,33 @@ public class GameManager extends Group {
 
         Stream.of(Direction.UP, Direction.LEFT).parallel().forEach(
                 direction -> {
-            int mergeableFound = traverseGrid((x, y) -> {
-                Location thisloc = new Location(x, y);
-                Tile tile = gameGrid.get(thisloc);
+                    int mergeableFound = traverseGrid((x, y) -> {
+                        Location thisloc = new Location(x, y);
+                        Tile tile = gameGrid.get(thisloc);
 
-                if (tile != null) {
-                    Location nextLocation = thisloc.offset(direction); // calculates to a possible merge
-                    if (nextLocation.isValidFor(gridSize)) {
-                        Tile tileToBeMerged = gameGrid.get(nextLocation);
-                        if (tile.isMergeable(tileToBeMerged)) {
-                            return 1;
+                        if (tile != null) {
+                            Location nextLocation = thisloc.offset(direction); // calculates to a possible merge
+                            if (nextLocation.isValidFor(gridSize)) {
+                                Tile tileToBeMerged = gameGrid.get(nextLocation);
+                                if (tile.isMergeable(tileToBeMerged)) {
+                                    return 1;
+                                }
+                            }
                         }
+
+                        return 0;
+                    });
+
+                    if (mergeableFound > 0) {
+                        foundMergeableTile.set(true);
                     }
-                }
-
-                return 0;
-            });
-
-            if (mergeableFound > 0) {
-                foundMergeableTile.set(true);
-            }
-        });
+                });
 
         return foundMergeableTile.getValue();
     }
 
     /**
-     * This method creates and adds to the root group the control buttons 
+     * This method creates and adds to the root group the control buttons
      * (checkboxes and choichebox) showed in the main window.
      */
     private void createControls() {
@@ -501,7 +518,8 @@ public class GameManager extends Group {
 
     /**
      * This method creates and adds to the root group the menubar.
-     * @return 
+     *
+     * @return
      */
     public MenuBar createMenuBar() {
         MenuBar menuBar = new MenuBar();
@@ -524,7 +542,7 @@ public class GameManager extends Group {
         });
         MenuItem credits = new MenuItem("Credits");
         credits.setOnAction((e) -> {
-            
+
         });
         MenuItem help = new MenuItem("Help");
         help.setOnAction((e) -> {
@@ -559,15 +577,6 @@ public class GameManager extends Group {
                 if (!safemode) {
                     griglia.put(DEPTH_LOCATION, i); // location for search depth
                 }
-                try {
-                    giocatoreAutomatico = GiocatoreAutomatico
-                            .getGiocatoreAutomatico();
-                } catch (Exception e) {
-                    log.log(Level.SEVERE,
-                            "Error creating MyGiocatoreAutomatico");
-                    System.out.println(e);
-                    Platform.exit();
-                }
             });
             depthMenu.getItems().add(r);
             if (i == DEFAULT_DEPTH) {
@@ -575,7 +584,7 @@ public class GameManager extends Group {
                 r.setSelected(true);
             }
         }
-        
+
         Menu playingStyle = new Menu("Playing style");
         playingStyle.setDisable(true);
         ToggleGroup playingStyleGroup = new ToggleGroup();
@@ -586,15 +595,6 @@ public class GameManager extends Group {
             if (!safemode) {
                 griglia.put(PLAYING_STYLE_LOCATION, currentStyle);
             }
-            try {
-                giocatoreAutomatico = GiocatoreAutomatico
-                        .getGiocatoreAutomatico();
-            } catch (Exception e) {
-                log.log(Level.SEVERE,
-                        "Error creating MyGiocatoreAutomatico");
-                    System.out.println(e);
-                    Platform.exit();
-                }
             depthMenu.setDisable(true);
         });
         RadioMenuItem blindStyle = new RadioMenuItem("Blind");
@@ -604,15 +604,6 @@ public class GameManager extends Group {
             if (!safemode) {
                 griglia.put(PLAYING_STYLE_LOCATION, currentStyle);
             }
-            try {
-                giocatoreAutomatico = GiocatoreAutomatico
-                        .getGiocatoreAutomatico();
-            } catch (Exception e) {
-                    log.log(Level.SEVERE,
-                            "Error creating MyGiocatoreAutomatico");
-                    System.out.println(e);
-                    Platform.exit();
-                }
             depthMenu.setDisable(true);
         });
         RadioMenuItem minimaxStyle = new RadioMenuItem("Minimax");
@@ -622,15 +613,6 @@ public class GameManager extends Group {
             if (!safemode) {
                 griglia.put(PLAYING_STYLE_LOCATION, currentStyle);
             }
-            try {
-                giocatoreAutomatico = GiocatoreAutomatico
-                        .getGiocatoreAutomatico();
-            } catch (Exception e) {
-                    log.log(Level.SEVERE,
-                            "Error creating MyGiocatoreAutomatico");
-                    System.out.println(e);
-                    Platform.exit();
-                }
             depthMenu.setDisable(false);
         });
         minimaxStyle.setSelected(true);
@@ -646,15 +628,6 @@ public class GameManager extends Group {
                 playingStyle.setDisable(false);
                 depthMenu.setDisable(false);
                 griglia.put(PLAYING_STYLE_LOCATION, currentStyle);
-                try {
-                    giocatoreAutomatico = GiocatoreAutomatico
-                            .getGiocatoreAutomatico();
-                } catch (Exception e) {
-                    log.log(Level.SEVERE,
-                            "Error creating MyGiocatoreAutomatico");
-                    System.out.println(e);
-                    Platform.exit();
-                }
                 safemode = false;
             } else {
                 playingStyle.setDisable(true);
@@ -712,7 +685,7 @@ public class GameManager extends Group {
 
     /**
      * This method commutes (enabling or disabling) the IA. If the IA is enabled
-     * the human player cannot move the board, but he can invoke a move from the 
+     * the human player cannot move the board, but he can invoke a move from the
      * automatic player, or he can enable the computer to move in automatic.
      */
     public void toggleAI() {
@@ -722,12 +695,16 @@ public class GameManager extends Group {
             try {
                 giocatoreAutomatico = GiocatoreAutomatico
                         .getGiocatoreAutomatico();
+            } catch (ClassNotFoundException e) {
+                log.log(Level.SEVERE,
+                        "Class MyGiocatoreAutomatico not found!");
+                System.out.println(e.getLocalizedMessage());
             } catch (Exception e) {
-                    log.log(Level.SEVERE, 
-                            "Error creating MyGiocatoreAutomatico");
-                    System.out.println(e);
-                    Platform.exit();
-                }
+                log.log(Level.SEVERE,
+                        "Error creating MyGiocatoreAutomatico");
+                System.out.println(e);
+                Platform.exit();
+            }
             ai = true;
             aiCheckBox.setSelected(true);
             //controls.getChildren().add(autoAiCheckBox);
@@ -747,8 +724,8 @@ public class GameManager extends Group {
     }
 
     /**
-     * This method commutes the automatic moving by the computer. When the 
-     * automatic moving is enabled, the game asks automatically the 
+     * This method commutes the automatic moving by the computer. When the
+     * automatic moving is enabled, the game asks automatically the
      * GiocatoreAutomatico to move.
      */
     public void toggleAutoAI() {
@@ -770,6 +747,7 @@ public class GameManager extends Group {
 
     /**
      * Check if the auomatic move setting is enabled.
+     *
      * @return <code>true</code> if automatic moving is enabled,
      * <code>false</code> otherwise.
      */
@@ -779,6 +757,7 @@ public class GameManager extends Group {
 
     /**
      * Check if the automatic player setting is enabled.
+     *
      * @return <code>true</code> if automatic player is enabled,
      * <code>false</code> otherwise.
      */
@@ -789,6 +768,7 @@ public class GameManager extends Group {
     /**
      * This method creates a Thread object for the automatic moving. When AutoAI
      * is enabled, the thread asks periodically the automatic player for move.
+     *
      * @return A Thread object which asks periodically for the automatic player
      * to move, when AutoAI is enabled.
      */
@@ -811,7 +791,7 @@ public class GameManager extends Group {
                     break;
                     //System.exit(1);
                 }
-                if (ai && autoAI) {
+                if (ai && autoAI && giocatoreAutomatico != null) {
                     Platform.runLater(() -> {
                         autoMove();
                     });
@@ -821,11 +801,12 @@ public class GameManager extends Group {
     }
 
     /**
-     * This method creates a Runnable object for the automatic moving. When 
-     * AutoAI is enabled, the thread runing this task asks periodically 
-     * the automatic player for move.
-     * @return A Task object which asks periodically for the automatic player
-     * to move, when AutoAI is enabled.
+     * This method creates a Runnable object for the automatic moving. When
+     * AutoAI is enabled, the thread runing this task asks periodically the
+     * automatic player for move.
+     *
+     * @return A Task object which asks periodically for the automatic player to
+     * move, when AutoAI is enabled.
      */
     public Task aiTask() {
         return new Task<Integer>() {
@@ -908,7 +889,7 @@ public class GameManager extends Group {
     }
 
     /**
-     * This method creates the graphic for the game grid and insert it in the 
+     * This method creates the graphic for the game grid and insert it in the
      * main window.
      */
     private void createGrid() {
@@ -950,7 +931,7 @@ public class GameManager extends Group {
     }
 
     /**
-     * This method initializes actions for game over and game win. 
+     * This method initializes actions for game over and game win.
      */
     private void initGameProperties() {
         gameOverProperty.addListener((observable, oldValue, newValue) -> {
@@ -1059,7 +1040,7 @@ public class GameManager extends Group {
      */
     private void redrawTilesInGameGrid() {
         gameGrid.values().stream().filter(Objects::nonNull).forEach(t -> {
-            double layoutX = t.getLocation().getLayoutX(CELL_SIZE) 
+            double layoutX = t.getLocation().getLayoutX(CELL_SIZE)
                     - (t.getMinWidth() / 2);
             double layoutY = t.getLocation().getLayoutY(CELL_SIZE)
                     - (t.getMinHeight() / 2);
@@ -1072,6 +1053,7 @@ public class GameManager extends Group {
 
     /**
      * This method initializes the timeline for the game animations.
+     *
      * @param v1 Value of acquired points.
      * @return Timeline object for the animation.
      */
@@ -1092,6 +1074,17 @@ public class GameManager extends Group {
         timeline.getKeyFrames().add(kfY);
 
         return timeline;
+    }
+
+    /**
+     * This method does a move on the grid without conflicting with automoving
+     * from the GiocatoreAutomatico
+     * @param direction Direction for the desired move.
+     */
+    public void humanMove(Direction direction) {
+        if (autoMoving)
+            return;
+        move(direction);
     }
 
     /**
@@ -1169,8 +1162,9 @@ public class GameManager extends Group {
     }
 
     /**
-     * This method creates and adds a tile in the desired position and 
-     * draws the correspunding graphical animation.
+     * This method creates and adds a tile in the desired position and draws the
+     * correspunding graphical animation.
+     *
      * @param randomLocation Location for the new tile.
      */
     private void addAndAnimateRandomTile(Location randomLocation) {
@@ -1179,9 +1173,9 @@ public class GameManager extends Group {
         log.log(Level.INFO, "Added random tile. {0}", tile.toString());
         newRandomTile = tile;
 
-        double layoutX = tile.getLocation().getLayoutX(CELL_SIZE) 
+        double layoutX = tile.getLocation().getLayoutX(CELL_SIZE)
                 - (tile.getMinWidth() / 2);
-        double layoutY = tile.getLocation().getLayoutY(CELL_SIZE) 
+        double layoutY = tile.getLocation().getLayoutY(CELL_SIZE)
                 - (tile.getMinHeight() / 2);
 
         tile.setLayoutX(layoutX);
@@ -1200,22 +1194,23 @@ public class GameManager extends Group {
 
     /**
      * This method draws the animation for a tile movement.
+     *
      * @param tile Tile to be animated.
      * @param newLocation New location to move the tile to.
      * @return Timeline containing the animation.
      */
     private Timeline animateExistingTile(Tile tile, Location newLocation) {
         // quicker animation if the autoplayer is going fast
-        if (this.autoAI && this.moveGap >= 500) {
-            ANIMATION_EXISTING_TILE = Duration.millis(125);
-        } else {
+        if (this.autoAI && this.moveGap < 500) {
             ANIMATION_EXISTING_TILE = Duration.millis(15);
+        } else {
+            ANIMATION_EXISTING_TILE = Duration.millis(125);
         }
 
         Timeline timeline = new Timeline();
-        KeyValue kvX = new KeyValue(tile.layoutXProperty(), 
+        KeyValue kvX = new KeyValue(tile.layoutXProperty(),
                 newLocation.getLayoutX(CELL_SIZE) - (tile.getMinHeight() / 2));
-        KeyValue kvY = new KeyValue(tile.layoutYProperty(), 
+        KeyValue kvY = new KeyValue(tile.layoutYProperty(),
                 newLocation.getLayoutY(CELL_SIZE) - (tile.getMinHeight() / 2));
 
         KeyFrame kfX = new KeyFrame(ANIMATION_EXISTING_TILE, kvX);
@@ -1229,7 +1224,7 @@ public class GameManager extends Group {
 
     // after last movement on full grid, check if there are movements available
     private EventHandler<ActionEvent> onFinishNewlyAddedTile = e -> {
-        if (this.gameGrid.values().parallelStream().noneMatch(Objects::isNull) 
+        if (this.gameGrid.values().parallelStream().noneMatch(Objects::isNull)
                 && !mergeMovementsAvailable()) {
             this.gameOverProperty.set(true);
         }
@@ -1240,15 +1235,16 @@ public class GameManager extends Group {
 
     /**
      * This method draws the animation for a newly added tile.
+     *
      * @param tile Tile to be animated.
      * @return Timeline object containing the animation.
      */
     private Timeline animateNewlyAddedTile(Tile tile) {
         // quicker animation if the autoplayer is going fast
-        if (this.autoAI && this.moveGap >= 500) {
-            ANIMATION_NEWLY_ADDED_TILE = Duration.millis(125);
-        } else {
+        if (this.autoAI && this.moveGap < 500) {
             ANIMATION_NEWLY_ADDED_TILE = Duration.millis(15);
+        } else {
+            ANIMATION_NEWLY_ADDED_TILE = Duration.millis(125);
         }
 
         Timeline timeline = new Timeline();
@@ -1268,15 +1264,16 @@ public class GameManager extends Group {
 
     /**
      * This method hides the tiles ready to be merged.
+     *
      * @param tile Tile to be hidden.
      * @return Timeline object containing the animation.
      */
     private Timeline hideTileToBeMerged(Tile tile) {
         // quicker animation if the autoplayer is going fast
-        if (this.autoAI && this.moveGap >= 500) {
-            ANIMATION_TILE_TO_BE_MERGED = Duration.millis(150);
-        } else {
+        if (this.autoAI && this.moveGap < 500) {
             ANIMATION_TILE_TO_BE_MERGED = Duration.millis(15);
+        } else {
+            ANIMATION_TILE_TO_BE_MERGED = Duration.millis(150);
         }
         Timeline timeline = new Timeline();
         KeyValue kv = new KeyValue(tile.opacityProperty(), 0);
@@ -1286,7 +1283,7 @@ public class GameManager extends Group {
     }
 
     /**
-     * This method saves the current game status. It is restorable through the 
+     * This method saves the current game status. It is restorable through the
      * {@link game2048.GameManager#restoreSession() restoreSession} method.
      */
     public void saveSession() {
@@ -1295,8 +1292,8 @@ public class GameManager extends Group {
     }
 
     /**
-     * This method restores the last saved game status. The status can be saved 
-     * through the {@link game2048.GameManager#saveSession() saveSession} 
+     * This method restores the last saved game status. The status can be saved
+     * through the {@link game2048.GameManager#saveSession() saveSession}
      * method.
      */
     public void restoreSession() {

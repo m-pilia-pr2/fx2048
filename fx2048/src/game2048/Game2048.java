@@ -179,10 +179,9 @@ public class Game2048 extends Application {
             if (keyCode.isArrowKey() == false) { // only arrows after this!!!
                 return;
             }
-            if (!gameManager.isAI()) { // umano può giocare solo se non c'è auto
-                Direction direction = Direction.valueFor(keyCode);
-                gameManager.move(direction);
-            }
+            Direction direction = Direction.valueFor(keyCode);
+            gameManager.humanMove(direction);
+            ke.consume(); // avoid arrow movements on gui controls
         });
     }
 

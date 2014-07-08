@@ -46,9 +46,9 @@ Running fx2048Auto
 In order to work, the game needs each of the two components is avaible in the 
 classpath, and each component is packed in a separatred jar file. Note that
 giocatoreAutomatico.jar is only a non-runnable Java library, while the 
-game2048.jar is a runnable jar packaging a JavaFX8 application, but it's useless
-while the other jar is not in the java classpath (the application will probably 
-throw some ClassNotFoundException).
+Game2048.jar is a runnable jar packaging a JavaFX8 application. The Game2048.jar
+will search for the giocatoreAutomatico: if the class implementing it is not 
+avaible, the application will work in human mode only.
 
 After building the project, you can run the application launching the following 
 command in the project root folder:
@@ -64,8 +64,8 @@ Playing instructions
 ====================
 The game is played as usual, with the arrow keys or swiping on the touchscreen 
 (from ARM devices). If you want to let the computer play himself, select the 
-"Need help?" checkbox, located in the main window. After selecting it, you cannot
-move the tiles anymore with arrow keys, but you can ask the computer to do an 
+"Need help?" checkbox, located in the main window. After selecting it, you can
+move the tiles with arrow keys, but you can ask the computer to do an 
 automatic move by pressing the "n" (next) key. If you select the 
 "Auto move" checkbox, the game plays a move on a regular time 
 interval, customizable through the choichebox on the main window, located under 
