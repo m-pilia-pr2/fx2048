@@ -27,7 +27,7 @@ more compatibility, a copy of the interfaces GiocatoreAutomatico and Griglia has
 been included in the game2048.jar too.
 
 You will need [Java 8](http://www.oracle.com/technetwork/java/javase/downloads/index.html)
-and [ANT](http://ant.apache.org/) installed to build the project. You can build 
+and [ANT](http://ant.apache.org/) to build the project. You can build 
 the two components separately, launching ant in each project root (both 
 giocatoreAutomatico/ and fx2048/ folders) with the following command:
 
@@ -107,12 +107,14 @@ asks confirmationt with a popup window.
 Playing Styles
 ==============
 The automatic player has three different playing styles:<br />
-*random move<br />
-*blind (following a blind strategy)<br />
-*minimax
+<ul>
+<li>random move</li>
+<li>blind (following a blind strategy)</li>
+<li>minimax</li>
+</ul>
 
 Superseeding on the first two, the third is a simple implementation of a search 
-algorithm. The algorithm tries each possible move recursively, and for each move
+algorithm and an evaluation function. The algorithm tries each possible move recursively, and for each move
 every possible tile adding is tested. The algorithm searches for the best move 
 against the worst posible adding (in this aspect is a minimax algorithm).
 The implementation uses an own board representation, fully 
@@ -123,7 +125,7 @@ it usually passes the 2048 tile (more than 20.000 points) and often reaches
 80.000 points. This is a very quick and simple implementation, and there is a lot of space
 for optimization and improvement of the AI.
 
-![alt Screenshot](https://db.tt/DOFDOtLd)
+![Screenshot](https://www.dropbox.com/s/8d1u8e0hmj78g3b/win.png?dl=1)
 
 License
 ===================
